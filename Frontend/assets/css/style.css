@@ -1,63 +1,93 @@
 /* 기본 폰트 설정 */
 body {
     font-family: 'Noto Sans', sans-serif;
-  }
-  
-  header .logo svg {
-    fill: #111518;
-  }
-  
-/* 메인 배너 부분 */
+}
+
+/* 네비게이션 바 스타일 */
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #ffffff;
+    height: 70px; /* 네비게이션 바 높이 */
+}
+
+.logo-container img {
+    height: 60px;
+    width: auto;
+    cursor: pointer; /* 클릭 가능 커서 */
+}
+
+/* 메인 배너 스타일 */
 .main-banner {
     position: relative;
-    height: 100vh; /* 배너 높이를 화면 전체로 설정 */
-    overflow: hidden; /* 화면 밖으로 나가는 요소를 숨김 */
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between; /* 텍스트와 버튼의 간격을 자동으로 조정 */
-  }
-  
-  .image-container img {
-    width: 100%; /* 이미지 너비를 부모 컨테이너에 맞춤 */
-    height: 100%; /* 이미지 높이를 부모 높이에 맞춤 */
-    object-fit: cover; /* 이미지가 비율을 유지하면서 영역을 채우도록 설정 */
-  }
-  
-  .content-container {
-    position: absolute;
-    top: 40%; /* 텍스트가 화면 중앙에서 조금 위쪽에 위치하도록 조정 */
-    left: 50%;
-    transform: translate(-50%, -50%);
+    height: calc(100vh - 40px); /* 네비게이션 바 높이를 뺀 화면 전체 */
+    overflow: hidden;
+    background-color: #f9f9f9; /* 기본 배경색 */
+}
+
+.image-container img {
+    width: 70%;
+    height: auto;
+    object-fit: cover;
+}
+
+.content-container {
+    position: relative;
+    top: 20px; /* 네비게이션 바 아래로 배치 */
+    margin-top: 40px; /* 추가 간격 */
     text-align: center;
-    width: 90%; /* 텍스트 폭 제한 */
-  }
-  
-  .content-container h1 {
-    font-size: inherit; /* 기존 HTML 폰트 크기 유지 */
-    font-weight: 700;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* 텍스트 가독성을 위한 그림자 */
-  }
-  
-  .content-container p {
-    font-size: inherit; /* 기존 HTML 폰트 크기 유지 */
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8); /* 가독성을 위한 텍스트 그림자 */
-  }
-  
-  .button-container {
-    margin-bottom: 1rem; /* 버튼과 배너 하단 간격 */
-    z-index: 1; /* 버튼이 항상 보이도록 설정 */
-  }
-  
-  .button-container button {
-    font-size: inherit; /* 기존 HTML 버튼 폰트 크기 유지 */
-    padding: 0.75rem 1.5rem; /* 버튼의 패딩 조정 */
-    border-radius: 20px; /* 버튼 모서리 둥글게 */
-    background-color: #f0f2f5; /* 버튼 색상 */
-    color: #111518; /* 텍스트 색상 */
-    border: none; /* 버튼 테두리 제거 */
-    transition: background-color 0.3s ease; /* 호버 시 부드러운 효과 */
-  }
-  
-  .button-container button:hover {
-    background-color: #d6d8db; /* 버튼 호버 색상 */
-  }
+    animation: fadeInUp 1.5s ease-out forwards; /* 애니메이션 */
+    opacity: 0; /* 초기 상태 */
+}
+
+.banner-title {
+    font-size: 3rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    margin-bottom: 1rem;
+    color: #ffffff;
+}
+
+.banner-subtitle {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    color: #ffffff;
+}
+
+/* 버튼 스타일 */
+#simulation-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+}
+
+
+/* 애니메이션 */
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+/* content-container에 애니메이션 적용 */
+.content-container {
+    position: absolute;
+    top: 60%; /* 부모 요소 기준으로 더 아래 정렬 */
+    left: 50%;
+    transform: translate(-50%, -50%); /* 중앙 정렬 */
+    text-align: center;
+    animation: fadeInUp 1.5s ease-out forwards; /* 애니메이션 실행 */
+    opacity: 0; /* 초기 상태 숨김 */
+}
+
+/* 개별 딜레이 설정 */
+.content-container h1,p, simulation-btn {
+    animation-delay: 0.6s;
+}
+
+
+
