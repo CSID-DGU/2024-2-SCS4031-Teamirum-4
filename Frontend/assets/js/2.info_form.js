@@ -29,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
             firstInvalidField.focus(); // 첫 번째 잘못된 필드로 포커스 이동
         } else {
             // 모든 값이 올바른 경우 JSON 데이터 생성
+            /*
             const jsonData = {
                 기본정보: {
                     이름: document.getElementById("first-name").value,
@@ -78,6 +79,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.error("전송 에러:", error);
                     alert("데이터 전송 중 오류가 발생했습니다. 다시 시도해주세요.");
                 });
+              */
+             // 임시로 다음 페이지로 이동
+            window.location.href = "3.rec.html";  
         }
     });
 });

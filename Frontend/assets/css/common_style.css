@@ -1,0 +1,25 @@
+/* 공통적으로 사용하는 폰트와 기본 스타일 */
+body {
+    font-family: 'Noto Sans', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 네비게이션 바의 공통적인 구조 정의 */
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #ffffff;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+    height: 70px; /* 기본 높이 */
+    padding: 0 1rem;
+}
+
+/* 로고 컨테이너의 기본 스타일 */
+.logo-container img {
+    width: auto;
+    height: 50px; /* 기본 크기 */
+    cursor: pointer;
+}

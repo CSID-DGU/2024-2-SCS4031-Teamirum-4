@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insurance Information Form</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="../assets/css/common_style.css">
+  <link rel="stylesheet" href="../assets/css/2.info_form_style.css">
+</head>
+
+<body>
+  <!-- 네비게이션 바 -->
+  <nav class="navbar">
+    <a href="1.main.html" class="logo-container">
+        <img src="../assets/images/logo.png" alt="Teamirum Logo" class="logo">
+    </a>
+  </nav> 
+
+  <!-- 추천 결과 컨테이너 -->
+  <div class="container py-5">
+    <div class="text-center mb-5">
+      <h1 class="recommendation-title">고객님의 정보에 기반하여 추천하는 보험 상품입니다.</h1>
+    </div>
+
+    <!-- 보험 상품 목록 -->
+    <div class="insurance-list">
+      <div class="insurance-item">
+        <div class="insurance-image" style="background-image: url('../assets/images/health_insurance.png');"></div>
+        <div class="insurance-info">
+          <h2 class="insurance-title">건강 보험</h2>
+          <p class="insurance-description">의료비를 보장하며 다양한 혜택을 제공하는 필수 보험입니다.</p>
+          <a class="btn btn-primary" href="#">챗봇으로 시뮬레이션 돌려보기</a>
+        </div>
+      </div>
+
+      <div class="insurance-item">
+        <div class="insurance-image" style="background-image: url('../assets/images/life_insurance.png');"></div>
+        <div class="insurance-info">
+          <h2 class="insurance-title">생명 보험</h2>
+          <p class="insurance-description">가족의 재정적 보호를 제공하며 저축 계획으로 활용할 수 있습니다.</p>
+          <a class="btn btn-primary" href="#">챗봇으로 시뮬레이션 돌려보기</a>
+        </div>
+      </div>
+
+      <div class="insurance-item">
+        <div class="insurance-image" style="background-image: url('../assets/images/car_insurance.png');"></div>
+        <div class="insurance-info">
+          <h2 class="insurance-title">자동차 보험</h2>
+          <p class="insurance-description">사고 발생 시 재정적 손실을 보호하며 법적으로 요구되는 보험입니다.</p>
+          <a class="btn btn-primary" href="#">챗봇으로 시뮬레이션 돌려보기</a>
+        </div>
+      </div>
+
+      <div class="insurance-item">
+        <div class="insurance-image" style="background-image: url('../assets/images/home_insurance.png');"></div>
+        <div class="insurance-info">
+          <h2 class="insurance-title">주택 보험</h2>
+          <p class="insurance-description">도난, 화재 등 위험으로부터 재산을 보호하며 책임 보장을 제공합니다.</p>
+          <a class="btn btn-primary" href="#">챗봇으로 시뮬레이션 돌려보기</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="../assets/js/3.rec.js"></script>
+</body>
