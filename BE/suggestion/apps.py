@@ -6,6 +6,9 @@ import pdfplumber
 import numpy as np
 from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 import torch
+from keybert import KeyBERT
+import re
+
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -17,11 +20,12 @@ texts_and_filenames = []
 embeddings = None
 index = None
 model = None
+kw_model = None
+
 generator = None
 
 # 텍스트 전처리 함수
 def clean_text(text):
-    import re
     text = re.sub(r'\s+', ' ', text)
     text = re.sub(r'[^\w\sㄱ-ㅎㅏ-ㅣ가-힣.,!?]', '', text)
     return text.strip()
@@ -42,7 +46,7 @@ def extract_texts_and_filenames(pdf_dir):
     return texts_and_filenames
 
 def initialize_rag_model():
-    global texts, texts_and_filenames, embeddings, index, model, generator
+    global texts, texts_and_filenames, embeddings, index, model, generator, kw_model
     
     # PDF에서 텍스트와 파일 이름 추출
     texts_and_filenames = extract_texts_and_filenames(pdf_dir)
@@ -52,6 +56,7 @@ def initialize_rag_model():
     # 텍스트 임베딩 생성
     model = SentenceTransformer('all-MiniLM-L6-v2')
     embeddings = model.encode(texts, normalize_embeddings=True)
+    kw_model = KeyBERT(model)
     
     # FAISS 인덱스 설정
     embedding_dim = embeddings.shape[1]
