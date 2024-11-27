@@ -83,7 +83,7 @@ def generate_reason_with_keywords(user_query, recommended_text, similarity_score
     return reason
 
 # PDF에서 텍스트와 파일 이름 추출
-pdf_dir = "/Users/ddinga/Downloads/상품요약서"
+pdf_dir = "C:/Users/kehah/Desktop/상품요약서"
 texts_and_filenames = extract_texts_and_filenames(pdf_dir)
 texts = [item[0] for item in texts_and_filenames]
 filenames = [item[1] for item in texts_and_filenames]
