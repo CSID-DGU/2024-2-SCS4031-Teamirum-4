@@ -249,4 +249,5 @@ $RECYCLE.BIN/
 # 보험 약관
 삼성생명
 
-# End of https://www.toptal.com/developers/gitignore/api/macos,windows,django,virtualenv,venv
+# End of https://www.toptal.com/developers/gitignore/api/macos,windows,django,virtualenv,venv상품약관/
+상품요약서/
