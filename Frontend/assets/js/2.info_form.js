@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "연소득(만원)": document.getElementById("income").value
                 },
                 가입목적및개인선호: {
-                    가입목적: document.getElementById("purpose").value,
+                    카테고리: document.getElementById("category").value,
                     선호보장기간: document.getElementById("coverage-period").value,
                     보험료납입주기: document.getElementById("payment-frequency").value
                 }
@@ -65,17 +65,18 @@ document.addEventListener("DOMContentLoaded", () => {
             })
                 .then((response) => {
                     if (!response.ok) {
+                        console.error("응답 에러:", response.status, response.statusText);
                         throw new Error("서버 응답 에러");
                     }
                     return response.json();
                 })
                 .then((data) => {
-                    console.log("서버 응답 데이터:", data); // 응답 데이터를 여기서 출력
-                    localStorage.setItem("recommendationData", JSON.stringify(data)); // localStorage 저장
-                    window.location.href = "3.rec.html"; // 성공적으로 전송된 경우 다음 페이지로 이동
+                    console.log("서버 응답 데이터:", data);
+                    localStorage.setItem("recommendationData", JSON.stringify(data));
+                    window.location.href = "3.rec.html";
                 })
                 .catch((error) => {
-                    console.error("전송 에러:", error);
+                    console.error("전송 에러:", error.message);
                     alert("데이터 전송 중 오류가 발생했습니다. 다시 시도해주세요.");
                 });
         }
