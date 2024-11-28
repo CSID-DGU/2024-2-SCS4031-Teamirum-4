@@ -59,9 +59,9 @@ document.addEventListener("DOMContentLoaded", () => {
             fetch("http://127.0.0.1:8000/api/v1/suggestion/suggest", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
                 },
-                body: JSON.stringify(jsonData)
+                body: JSON.stringify(jsonData),
             })
                 .then((response) => {
                     if (!response.ok) {
@@ -70,19 +70,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     return response.json();
                 })
                 .then((data) => {
-                    console.log("서버 응답:", data);
-                    // 성공적으로 전송된 경우 다음 페이지로 이동
-                    window.location.href = "3.rec.html";
+                    console.log("서버 응답 데이터:", data); // 응답 데이터를 여기서 출력
+                    localStorage.setItem("recommendationData", JSON.stringify(data)); // localStorage 저장
+                    window.location.href = "3.rec.html"; // 성공적으로 전송된 경우 다음 페이지로 이동
                 })
                 .catch((error) => {
                     console.error("전송 에러:", error);
-                    localStorage.setItem("recommendationData", JSON.stringify(data));
                     alert("데이터 전송 중 오류가 발생했습니다. 다시 시도해주세요.");
                 });
-             // 임시로 다음 페이지로 이동
-            //window.location.href = "3.rec.html";  
         }
     });
 });
-
-
