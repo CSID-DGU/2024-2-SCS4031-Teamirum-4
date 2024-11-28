@@ -16,6 +16,15 @@ import pytesseract
 client = OpenAI(api_key="")
 pytesseract.pytesseract.tesseract_cmd = r"C:/Program Files/Tesseract-OCR/tesseract.exe"
 
+# 네비게이션 바 추가
+navbar_html = """
+<nav class="navbar">
+    <a href="1.main.html" class="logo-container">
+        <img src="C:/Users/kehah/Desktop/2024-2-SCS4031-Teamirum-4/Frontend/assets/images/logo.png" alt="Teamirum Logo" class="logo">
+    </a>
+</nav>
+"""
+components.html(navbar_html, height=60)
 
 # 추천 결과를 JSON 파일에서 불러오기
 with open('C:/Users/kehah/Desktop/2024-2-SCS4031-Teamirum-4/AI/recommendations.json', 'r', encoding='utf-8') as f:
@@ -139,23 +148,25 @@ if uploaded_file:
         ocr_text = ocr_image_to_text(image)
     st.success("이미지에서 텍스트 추출이 완료되었습니다.")  
 
+# 사용자 입력 또는 OCR 텍스트가 None일 경우 기본값 설정
+user_input = user_input or ""  # None이면 빈 문자열로 처리
+ocr_text = ocr_text or ""      # None이면 빈 문자열로 처리
+ # OCR 데이터 + 사용자 입력 결합
+combined_input = f"{user_input.strip()} {ocr_text.strip()}".strip()
 
-if user_input or ocr_text:
+    
+if not combined_input:  # 빈 값이면 처리 중단
+    st.error("입력된 텍스트가 없습니다. 이미지를 업로드하거나 텍스트를 입력하세요.")
+else:
+    # GPT에 질문
+    assistant_response = ask_gpt(combined_input, recommendation_results)
 
-    combined_input = f"{user_input.strip()} {ocr_text.strip()}".strip()
-    
-    if not combined_input:  # 빈 값이면 처리 중단
-        st.error("입력된 텍스트가 없습니다. 이미지를 업로드하거나 텍스트를 입력하세요.")
-    else:
-        # GPT에 질문
-        assistant_response = ask_gpt(combined_input, recommendation_results)
-    
-        # 대화 상태 업데이트
-        st.session_state.messages.append({"role": "user", "content": combined_input})
-        st.session_state.messages.append({"role": "assistant", "content": assistant_response})
-    
-        # 출력
-        with st.chat_message("user"):
-            st.markdown(user_input)
-        with st.chat_message("assistant"):
-            st.markdown(assistant_response)
+    # 대화 상태 업데이트
+    st.session_state.messages.append({"role": "user", "content": combined_input})
+    st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+
+    # 출력
+    with st.chat_message("user"):
+        st.markdown(user_input)
+    with st.chat_message("assistant"):
+        st.markdown(assistant_response)
