@@ -9,7 +9,6 @@ import json
 import time
 import os
 
-
 # 텍스트 분할 함수
 def split_text(text, max_length=512):
     sentences = text.split('. ')
@@ -32,8 +31,10 @@ def json_to_query(data):
             if key == '생년월일':
                 birth_year, birth_month, birth_day = map(int, value.split('-'))
                 age = time.localtime().tm_year - birth_year
-                if age < 30:
-                    age = '20대 이하'
+                if age < 20:
+                    age = '10대'
+                elif age < 30:
+                    age = '20대'
                 elif age < 40:
                     age = '30대'
                 elif age < 50:
@@ -115,11 +116,10 @@ class SuggestionAPIView(APIView):
             recommendations = [ selected_model["texts_and_filenames"][i] for i in indices[0] ]
             # print(recommendations)
 
-            # RAG 기반 추천
             recommendation_results = []
             recommendation_send = []
 
-            print("RAG 기반 추천 결과:")
+            print("모델 기반 추천 결과:")
             for i, (rec_text, rec_filename) in enumerate(recommendations):
                 product_name = rec_filename  # 파일 이름을 상품명으로 사용
                 similarity_score = float(distances[0][i])
@@ -127,7 +127,7 @@ class SuggestionAPIView(APIView):
 
                 # 추천 결과를 딕셔너리로 저장
                 recommendation = {
-                    'product_name': product_name,
+                    'product_name': product_name[:-4],
                     'summary_text': rec_text,
                     'similarity_score': similarity_score,
                     'reason': reason
