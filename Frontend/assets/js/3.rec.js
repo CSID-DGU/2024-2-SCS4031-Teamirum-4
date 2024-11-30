@@ -15,17 +15,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 추천 데이터가 있을 경우 화면에 추가
     recommendationData.recommendations.forEach((item, index) => {
-        const insuranceItem = document.createElement("div");
-        insuranceItem.classList.add("insurance-item");
+        const cleanedTitle = (item.product_name || "상품 이름 없음")
+            .replace(/^추천\s*/, "") // "추천" 텍스트만 제거
+            .replace(/\.pdf$/i, ""); // ".pdf" 텍스트 제거
 
-        // 추천 상품 HTML 구조
+        const cleanedReasonMatch = (item.reason || "").match(/['"”](.*?)['"”]|\((.*?)\)/);
+        const extractedReason = cleanedReasonMatch
+            ? cleanedReasonMatch[1] || cleanedReasonMatch[2] || "연관 이유 없음"
+            : "연관 이유 없음";
+
+        const finalReason = `연관 이유: ${extractedReason}`;
+
+        // 추천 상품 HTML 구조 생성
+        const insuranceItem = document.createElement("div");
+        insuranceItem.className = "insurance-item";
         insuranceItem.innerHTML = `
-            <div class="insurance-image" style="background-image: url('../assets/images/placeholder.png');"></div>
+            <div class="insurance-image"></div>
             <div class="insurance-info">
-                <h2 class="insurance-title">추천 ${index + 1}: ${item.product_name || "상품 이름 없음"}</h2>
-                <p class="insurance-description">${item.reason || "추천 이유가 제공되지 않았습니다."}</p>
-                <a class="btn btn-primary simulate-button" href="#">챗봇으로 시뮬레이션 돌려보기</a>
+                <h2 class="insurance-title">${cleanedTitle}</h2>
+                <p class="insurance-description">${finalReason}</p>
+                <a class="btn btn-secondary simulate-button" style="padding: 6px 12px; font-size: 12px; background-color: #5a7d9a; color: white; border: none;" href="#">챗봇으로 시뮬레이션 돌려보기</a>
             </div>
+            <hr style="border: none; height: 1px; background-color: #e0e0e0; margin: 20px 0;">
         `;
         recommendationContainer.appendChild(insuranceItem);
     });

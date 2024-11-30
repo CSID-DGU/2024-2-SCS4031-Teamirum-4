@@ -91,14 +91,14 @@ body {
   }
   
   .form-control:focus {
-    border-color: #007bff;
+    border-color: #7d94ac;
     outline: none;
     box-shadow: 0 0 3px rgba(0, 123, 255, 0.5);
   }
   
   /* 버튼 스타일 */
-  button[type="submit"] {
-    background-color: #007bff;
+  button[type="submit"].custom-submit-btn {
+    background-color: #606b77; /* 메인 색상 */
     border: none;
     color: #fff;
     border-radius: 8px;
@@ -106,8 +106,8 @@ body {
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-  }
-  
-  button[type="submit"]:hover {
-    background-color: #0056b3;
-  }
+}
+
+button[type="submit"].custom-submit-btn:hover {
+    background-color: #405767; /* 호버 시 더 어두운 색 */
+}
