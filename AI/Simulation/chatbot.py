@@ -127,13 +127,18 @@ def ocr_image_to_text(image):
     except Exception as e:
         return f"Error during OCR processing: {str(e)}"
 
+#보장 한도, 월 납입액,만기기간, 보장 내용,
+# def extract_specified_info(text):
+#     try:
+
+
 
 # UI ( logo 추가 가능 )
 st.title("티미룸 보험 챗봇입니다")
 
 # 세션 상태 초기화
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+     st.session_state.messages = [{"role": "system", "content": "당신은 보험 전문가입니다. 사용자에게 추천된 보험의 구체적인 정보(월 납입액, 보장한도, 해당보험이 추천된 이유 등)를 제공합니다."}]
 
 # 파일 업로드 UI
 uploaded_file = st.file_uploader("이미지 파일을 업로드하세요 (PNG, JPG)", type=["png", "jpg", "jpeg"])
