@@ -24,15 +24,12 @@ navbar_html = """
     </a>
 </nav>
 """
-#C:/Users/kehah/Desktop/2024-2-SCS4031-Teamirum-4/Frontend
 
 components.html(navbar_html, height=60)
  
 # 추천 결과를 JSON 파일에서 불러오기
 with open('C:/Users/kehah/Desktop/2024-2-SCS4031-Teamirum-4/AI/recommendations.json', 'r', encoding='utf-8') as f:
     recommendation_results = json.load(f)
-# JSON 파일 참조///
-# recommendation_results = st.session_state.recommendation_results
 
 # 텍스트 전처리 함수
 def clean_text(text):
@@ -40,20 +37,55 @@ def clean_text(text):
     text = re.sub(r'[^\w\sㄱ-ㅎㅏ-ㅣ가-힣.,!?]', '', text)  # 특수문자 제거
     return text.strip()
 
+def create_prompt(user_input, recommendation_results):
+    rag_results = []
+    for rec in recommendation_results:
+        try:
+            rag_results.append(
+                f"Rank {rec.get('rank', 'N/A')}: {rec.get('summary_text', '내용 없음')} "
+                f"(상품명: {rec.get('product_name', '상품명 없음')}, "
+                f"유사도 점수: {rec.get('similarity_score', 0.0):.2f})"
+            )
+        except KeyError as e:
+            rag_results.append(f"데이터 누락: {e}")
+    
+    references_text = "\n".join(rag_results)
+
+    # 시스템 메시지 생성
+    system_message = (
+        f"사용자의 질문과 관련된 정보를 기반으로 응답하세요.\n"
+        f"다음은 관련 참고자료입니다:\n{references_text}"
+    )
+    return system_message
 
 # GPT 응답 생성 함수
 def ask_gpt(user_input, recommendation_results):
     terms_dir = "C:/Users/kehah/Desktop/상품요약서"  
     
-    # 추천된 상품의 관련 내용을 수집
-    context = "아래는 추천된 보험 상품 목록과 관련 내용입니다:\n"
+    # 시스템 메시지 생성
+    system_message = create_prompt(user_input, recommendation_results)
     
-    for idx, rec in enumerate(recommendation_results):
+    
+    context = "추천된 보험상품 목록과 관련 내용입니다:\n"
+    
+    # RAG 결과를 명확히 구조화
+    rag_results = []
+    for idx, rec in enumerate(recommendation_results[:3]):
         product_name = rec.get('product_name', '상품명 없음')
-        terms_filename = product_name  # 파일 이름과 약관 파일명이 일치시켜야함
-        
-        terms_path = os.path.join(terms_dir, terms_filename)
-        relevant_text = ""
+        relevant_text = rec.get('relevant_text', '관련 텍스트 없음')
+        similarity_score = rec.get('similarity_score', 0.0)
+        rag_results.append({
+            "rank" : idx+1,
+            "product_name" : product_name,
+            "relevant_text": relevant_text,
+            "similarity_score": similarity_score,
+        })
+       
+         # 약관 파일 처리 및 RAG 결과 보강
+        for result in rag_results:
+            terms_filename = result["product_name"]  # 파일 이름과 약관 파일명이 일치시켜야함
+            terms_path = os.path.join(terms_dir, terms_filename)
+            relevant_text = ""
         
         if os.path.exists(terms_path):
             full_text = ""
@@ -74,11 +106,8 @@ def ask_gpt(user_input, recommendation_results):
                 
                 # 텍스트 전처리
                 full_text = clean_text(full_text)
-                sentences = re.split(r'(?<=[.!?])\s+', full_text)
-                
-                # 문장 수 제한
-                sentences = sentences[:1000]
-                
+                sentences = re.split(r'(?<=[.!?])\s+', full_text)[:1000]# 문장 수 제한
+
                 # 사용자 질문과 가장 유사한 문장 찾기
                 vectorizer = TfidfVectorizer().fit(sentences)
                 sentence_embeddings = vectorizer.transform(sentences)
@@ -95,16 +124,15 @@ def ask_gpt(user_input, recommendation_results):
         else:
             relevant_text = "해당 상품의 약관을 찾을 수 없습니다."
         
-        rec['relevant_text'] = relevant_text
-        context += f"{idx+1}. {product_name}: {relevant_text}\n"
+        result['relevant_text'] = relevant_text
 
+    # GPT 메시지 포맷
     messages = [
-        {"role": "system", "content": "당신은 보험 상품에 대한 전문가로서 사용자에게 정보를 제공합니다."},
-        {"role": "user", "content": user_input},
-        {"role": "assistant", "content": context},
-        {"role": "user", "content": "위의 정보를 바탕으로 사용자의 질문에 가장 관련 있는 답변을 제공하세요."}
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_input}
     ]
-    
+
+    # GPT 호출
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -118,6 +146,7 @@ def ask_gpt(user_input, recommendation_results):
         return answer
     except Exception as e:
         return f"Error: {str(e)}"
+    
 
 # OCR 처리 함수
 def ocr_image_to_text(image):
@@ -127,19 +156,17 @@ def ocr_image_to_text(image):
     except Exception as e:
         return f"Error during OCR processing: {str(e)}"
 
-#보장 한도, 월 납입액,만기기간, 보장 내용,
-# def extract_specified_info(text):
-#     try:
-
 
 
 # UI ( logo 추가 가능 )
 st.title("티미룸 보험 챗봇입니다")
 
 # 세션 상태 초기화
+# 대화 이력 관리
 if "messages" not in st.session_state:
-     st.session_state.messages = [{"role": "system", "content": "당신은 보험 전문가입니다. 사용자에게 추천된 보험의 구체적인 정보(월 납입액, 보장한도, 해당보험이 추천된 이유 등)를 제공합니다."}]
-
+    st.session_state.messages = [
+        {"role": "system", "content": "당신은 보험 전문가입니다. 사용자에게 정보를 제공합니다."}
+    ]
 # 파일 업로드 UI
 uploaded_file = st.file_uploader("이미지 파일을 업로드하세요 (PNG, JPG)", type=["png", "jpg", "jpeg"])
 user_input = st.text_input("질문을 입력하세요:")
@@ -156,18 +183,15 @@ if uploaded_file:
 combined_input = f"{user_input.strip()} {ocr_text.strip()}".strip()
 
     
-if not combined_input:  # 빈 값이면 처리 중단
-    st.warning("이미지를 업로드하거나 텍스트를 입력해주세요.")
-else:
-    # GPT에 질문
+# 세션 상태 업데이트
+if combined_input:
     assistant_response = ask_gpt(combined_input, recommendation_results)
-
-    # 대화 상태 업데이트
     st.session_state.messages.append({"role": "user", "content": combined_input})
     st.session_state.messages.append({"role": "assistant", "content": assistant_response})
 
-    # 출력
     with st.chat_message("user"):
         st.markdown(user_input)
     with st.chat_message("assistant"):
         st.markdown(assistant_response)
+else:
+    st.write("질문을 입력하거나 이미지 파일을 업로드하세요.")
