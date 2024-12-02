@@ -5,6 +5,7 @@ from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
 import re
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 #from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 #import torch
 from sklearn.metrics.pairwise import cosine_similarity
@@ -19,6 +20,16 @@ recommendation_results = []
 # 텍스트 추출 및 파일 이름과 연결
 def extract_texts_and_filenames(pdf_dir):
     texts_and_filenames = []
+    text_splitter = RecursiveCharacterTextSplitter(
+        #청크 크기 500글자
+        chunk_size=500, 
+        #청크간 중복되는 문자 수 50
+        chunk_overlap=50, 
+        #문자열 길이 계산 함수
+        length_function=len, 
+        #구분자로 정규식 사용하는지 여부
+        is_separator_regex=False)
+
     for filename in os.listdir(pdf_dir):
         if filename.endswith(".pdf"):
             with pdfplumber.open(os.path.join(pdf_dir, filename)) as pdf:
@@ -28,7 +39,11 @@ def extract_texts_and_filenames(pdf_dir):
                     if page_text:
                         text += page_text + " "
                 cleaned_text = clean_text(text)
-                texts_and_filenames.append((cleaned_text, filename))  # 텍스트와 파일 이름 저장
+                
+                chunks = text_splitter.split_text(cleaned_text)
+
+                for chunk in chunks:
+                    texts_and_filenames.append((chunk, filename))  # 텍스트와 파일 이름 저장
     return texts_and_filenames
 
 def clean_text(text):
@@ -99,6 +114,7 @@ kw_model = KeyBERT(model)
 embedding_dim = embeddings.shape[1]
 index = faiss.IndexFlatIP(embedding_dim)
 index.add(np.array(embeddings))
+
 
 # 나이 등급화 함수
 def get_age_group(age):
