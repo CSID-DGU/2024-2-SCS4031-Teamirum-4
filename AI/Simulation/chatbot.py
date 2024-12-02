@@ -60,11 +60,13 @@ from sklearn.metrics.pairwise import cosine_similarity
 import pdfplumber
 
 # OpenAI API 키 설정
-openai.api_key = ''
+openai.api_key = ' '
 
 # 추천 결과를 JSON 파일에서 불러오기
 with open('recommendations.json', 'r', encoding='utf-8') as f:
     recommendation_results = json.load(f)
+
+print(recommendation_results)
 
 def clean_text(text):
     text = re.sub(r'\s+', ' ', text)  # 불필요한 공백 제거
@@ -73,8 +75,9 @@ def clean_text(text):
 
 
 def ask_gpt(user_input, recommendation_results):
-    terms_dir = "/Users/ddinga/Downloads/상품약관" 
-    
+    # terms_dir = "/Users/ddinga/Downloads/상품약관" 
+    terms_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../상품약관'))
+
     # 추천된 상품의 관련 내용을 수집
     context = "아래는 추천된 보험 상품 목록과 관련 내용입니다:\n"
     
