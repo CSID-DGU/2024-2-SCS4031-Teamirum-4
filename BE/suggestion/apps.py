@@ -17,7 +17,6 @@ pdf_dirs = {
     "종신보험": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품요약서/종신보험')),
     "정기보험": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품요약서/정기보험')),
     "기타": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품요약서/기타')),
-    
 }
 
 
@@ -37,6 +36,7 @@ def extract_texts_and_filenames(pdf_dir):
     texts_and_filenames = []
     for filename in os.listdir(pdf_dir):
         if filename.endswith(".pdf"):
+            print(filename)
             with pdfplumber.open(os.path.join(pdf_dir, filename)) as pdf:
                 text = ""
                 for page in pdf.pages:

@@ -1,101 +1,101 @@
-# import openai
-# import streamlit as st #설치:pip install streamlit 
-# from openai import OpenAI
-
-# client = OpenAI(api_key="")
-
-# #openai.api_key = st.secrets.get("", "")  # API 키는 secrets에서 가져올경우
-
-# def ask_gpt(prompt, model="gpt-3.5-turbo", messages=None):
-#     if messages is None:
-#         messages = [{"role": "user", "content": prompt}]
-#     else:
-#         messages.append({"role": "user", "content": prompt})
-#     try:
-#         response = client.chat.completions.create(
-#             model=model,
-#             messages=messages
-#         )
-#         assistant_reply = response.choices[0].message.content #처리방식 변경
-#         return assistant_reply
-#     except Exception as e:
-#         return f"Error: {str(e)}"
-
-# # UI
-# st.title("티미룸 보험 챗봇")
-
-# # 세션 상태 초기화
-# if "messages" not in st.session_state:
-#     st.session_state.messages = []
-
-# # 기존 메시지 표시
-# for message in st.session_state.messages:
-#     with st.chat_message(message["role"]):
-#         st.markdown(message["content"])
-
-# #사용자 입력 처리
-# if user_input := st.chat_input("질문을 입력하세요: "):
-#     st.session_state.messages.append({"role": "user", "content": user_input})
-#     with st.chat_message("user"):
-#         st.markdown(user_input)
-
-#     # GPT 응답 생성
-#     with st.chat_message("assistant"):
-#         assistant_response = ask_gpt(
-#             prompt=user_input,
-#             model="gpt-3.5-turbo",
-#             messages=st.session_state.messages
-#         )
-#         st.markdown(assistant_response)
-        
-#     # 메시지 히스토리에 추가
-#     st.session_state.messages.append({"role": "assistant", "content": assistant_response})
-
 import openai
+from openai import OpenAI
+import streamlit as st
 import json
 import os
 import re
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import streamlit.components.v1 as components
+#OCR
 import pdfplumber
+from PIL import Image
+import pytesseract
 
 # OpenAI API 키 설정
-openai.api_key = ' '
+client = OpenAI(api_key="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")
+pytesseract.pytesseract.tesseract_cmd = r"C:/Program Files/Tesseract-OCR/tesseract.exe"
+
+
+
+pdf_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../recommendations.json'))
+
 
 # 추천 결과를 JSON 파일에서 불러오기
-with open('recommendations.json', 'r', encoding='utf-8') as f:
-    recommendation_results = json.load(f)
+with open(pdf_dir, 'r', encoding='utf-8') as f:
+    recommendation_results = json.load(f) 
 
-print(recommendation_results)
-
+# 텍스트 전처리 함수
 def clean_text(text):
     text = re.sub(r'\s+', ' ', text)  # 불필요한 공백 제거
     text = re.sub(r'[^\w\sㄱ-ㅎㅏ-ㅣ가-힣.,!?]', '', text)  # 특수문자 제거
     return text.strip()
 
-
-def ask_gpt(user_input, recommendation_results):
-    # terms_dir = "/Users/ddinga/Downloads/상품약관" 
-    terms_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../상품약관'))
-
-    # 추천된 상품의 관련 내용을 수집
-    context = "아래는 추천된 보험 상품 목록과 관련 내용입니다:\n"
+def create_prompt(user_input, recommendation_results):
+    rag_results = []
+    for rec in recommendation_results:
+        try:
+            rag_results.append(
+                f"Rank {rec.get('rank', 'N/A')}: {rec.get('summary_text', '내용 없음')} "
+                f"(상품명: {rec.get('product_name', '상품명 없음')}, "
+                f"유사도 점수: {rec.get('similarity_score', 0.0):.2f})"
+            )
+        except KeyError as e:
+            rag_results.append(f"데이터 누락: {e}")
     
-    for idx, rec in enumerate(recommendation_results):
+    references_text = "\n".join(rag_results)
+
+    # 시스템 메시지 생성
+    system_message = (
+        f"사용자의 질문과 관련된 정보를 기반으로 응답하세요.\n"
+        f"다음은 관련 참고자료입니다:\n{references_text}"
+    )
+    return system_message
+
+# GPT 응답 생성 함수
+def ask_gpt(user_input, recommendation_results):
+    
+    # terms_dir = "C:/Users/kehah/Desktop/상품요약서"
+    terms_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품요약서/종신보험'))
+      
+    
+    # 시스템 메시지 생성
+    system_message = create_prompt(user_input, recommendation_results)
+    
+    
+    context = "추천된 보험상품 목록과 관련 내용입니다:\n"
+    
+    # RAG 결과를 명확히 구조화
+    rag_results = []
+    for idx, rec in enumerate(recommendation_results[:3]):
         product_name = rec.get('product_name', '상품명 없음')
-        terms_filename = product_name  # 파일 이름과 약관 파일명이 일치시켜야함
-        
-        terms_path = os.path.join(terms_dir, terms_filename)
-        relevant_text = ""
+        relevant_text = rec.get('relevant_text', '관련 텍스트 없음')
+        similarity_score = rec.get('similarity_score', 0.0)
+        rag_results.append({
+            "rank" : idx+1,
+            "product_name" : product_name,
+            "relevant_text": relevant_text,
+            "similarity_score": similarity_score,
+        })
+       
+         # 약관 파일 처리 및 RAG 결과 보강
+        for result in rag_results:
+            terms_filename = result["product_name"]  # 파일 이름과 약관 파일명이 일치시켜야함
+            terms_path = os.path.join(terms_dir, terms_filename)
+            print(terms_path)
+            relevant_text = ""
         
         if os.path.exists(terms_path):
+            print('있어?')
             full_text = ""
             try:
                 # 약관 파일 로드
+                print('약관 파일 로드')
                 if terms_path.endswith('.pdf'):
                     with pdfplumber.open(terms_path) as pdf:
                         for page in pdf.pages:
                             page_text = page.extract_text()
+                            # print(page_text)
                             if page_text:
                                 full_text += page_text + " "
                 elif terms_path.endswith('.txt'):
@@ -107,11 +107,10 @@ def ask_gpt(user_input, recommendation_results):
                 
                 # 텍스트 전처리
                 full_text = clean_text(full_text)
-                sentences = re.split(r'(?<=[.!?])\s+', full_text)
+                sentences = re.split(r'(?<=[.!?])\s+', full_text)[:1000]# 문장 수 제한
                 
-                # 문장 수 제한
-                sentences = sentences[:1000]
-                
+                print(full_text)
+
                 # 사용자 질문과 가장 유사한 문장 찾기
                 vectorizer = TfidfVectorizer().fit(sentences)
                 sentence_embeddings = vectorizer.transform(sentences)
@@ -128,20 +127,17 @@ def ask_gpt(user_input, recommendation_results):
         else:
             relevant_text = "해당 상품의 약관을 찾을 수 없습니다."
         
-        rec['relevant_text'] = relevant_text
-        context += f"{idx+1}. {product_name}: {relevant_text}\n"
-    
-    # 메시지 구성 (ChatCompletion API 형식)
+        result['relevant_text'] = relevant_text
+
+    # GPT 메시지 포맷
     messages = [
-        {"role": "system", "content": "당신은 보험 상품에 대한 전문가로서 사용자에게 정보를 제공합니다."},
-        {"role": "user", "content": user_input},
-        {"role": "assistant", "content": context},
-        {"role": "user", "content": "위의 정보를 바탕으로 사용자의 질문에 가장 관련 있는 답변을 제공하세요."}
+        {"role": "system", "content": system_message},
+        {"role": "user", "content": user_input}
     ]
-    
-    # ChatCompletion API 호출
+
+    # GPT 호출
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=messages,
             max_tokens=300,
@@ -149,32 +145,56 @@ def ask_gpt(user_input, recommendation_results):
             n=1,
             stop=None,
         )
-        answer = response['choices'][0]['message']['content'].strip()
+        answer = response.choices[0].message.content.strip()
         return answer
     except Exception as e:
-        print(f"OpenAI API 요청 중 오류 발생: {e}")
-        return None
+        return f"Error: {str(e)}"
     
-# 대화형 챗봇
-def chat():
-    print("티미룸 보험 챗봇에 오신 것을 환영합니다! '종료'라고 입력하면 대화가 종료됩니다.")
-    while True:
-        # 사용자 입력 받기
-        user_input = input("사용자: ")
 
-        # '종료'를 입력하면 프로그램 종료
-        if user_input.lower() == '종료':
-            print("챗봇: 대화를 종료합니다. 안녕히 가세요!")
-            break
-        
-        # GPT 모델로 질문하고 응답 받기
-        answer = ask_gpt(user_input, recommendation_results)
+# OCR 처리 함수
+def ocr_image_to_text(image):
+    try:
+        text = pytesseract.image_to_string(image, lang='kor')
+        return clean_text(text)
+    except Exception as e:
+        return f"Error during OCR processing: {str(e)}"
 
-        # 응답 출력
-        if answer:
-            print(f"챗봇: {answer}")
-        else:
-            print("챗봇: 답변을 가져올 수 없습니다. 다시 시도해 주세요.")
 
-# 챗봇 시작
-chat()
+
+# UI ( logo 추가 가능 )
+st.title("티미룸 보험 챗봇입니다")
+
+# 세션 상태 초기화
+# 대화 이력 관리
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "system", "content": "당신은 보험 전문가입니다. 사용자에게 정보를 제공합니다."}
+    ]
+# 파일 업로드 UI
+uploaded_file = st.file_uploader("이미지 파일을 업로드하세요 (PNG, JPG)", type=["png", "jpg", "jpeg"])
+user_input = st.text_input("질문을 입력하세요:")
+
+# OCR 처리
+ocr_text = ""
+if uploaded_file:
+    image = Image.open(uploaded_file)
+    with st.spinner("이미지에서 텍스트를 추출 중..."):
+        ocr_text = ocr_image_to_text(image)
+    st.success("이미지에서 텍스트 추출이 완료되었습니다.")  
+
+ # OCR 데이터 + 사용자 입력 결합
+combined_input = f"{user_input.strip()} {ocr_text.strip()}".strip()
+
+    
+# 세션 상태 업데이트
+if combined_input:
+    assistant_response = ask_gpt(combined_input, recommendation_results)
+    st.session_state.messages.append({"role": "user", "content": combined_input})
+    st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+
+    with st.chat_message("user"):
+        st.markdown(user_input)
+    with st.chat_message("assistant"):
+        st.markdown(assistant_response)
+else:
+    st.write("질문을 입력하거나 이미지 파일을 업로드하세요.")

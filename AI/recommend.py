@@ -84,7 +84,10 @@ def generate_reason_with_keywords(user_query, recommended_text, similarity_score
 
 # PDF에서 텍스트와 파일 이름 추출
 pdf_dir = "/Users/ddinga/Downloads/상품요약서"
-# pdf_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../상품요약서'))
+
+
+pdf_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../recommendations.json'))
+
 
 texts_and_filenames = extract_texts_and_filenames(pdf_dir)
 texts = [item[0] for item in texts_and_filenames]
@@ -146,7 +149,7 @@ for i, (rec_text, rec_filename) in enumerate(recommendations):
     # 추천 결과를 딕셔너리로 저장
     recommendation = {
         'product_name': product_name,
-        'summary_text': rec_text,
+        # 'summary_text': rec_text,
         'similarity_score': similarity_score,
         'reason': reason
     }
