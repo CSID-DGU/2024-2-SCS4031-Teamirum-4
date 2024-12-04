@@ -13,7 +13,7 @@ from PIL import Image
 import pytesseract
 
 # OpenAI API 키 설정
-client = OpenAI(api_key="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")
+client = OpenAI(api_key="")
 pytesseract.pytesseract.tesseract_cmd = r"C:/Program Files/Tesseract-OCR/tesseract.exe"
 
 
