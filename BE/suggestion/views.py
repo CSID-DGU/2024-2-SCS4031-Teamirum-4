@@ -128,7 +128,7 @@ class SuggestionAPIView(APIView):
                 # 추천 결과를 딕셔너리로 저장
                 recommendation = {
                     'product_name': product_name,
-                    'summary_text': rec_text,
+                    # 'summary_text': rec_text,
                     'similarity_score': similarity_score,
                     'reason': reason
                 }

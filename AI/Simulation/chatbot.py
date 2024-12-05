@@ -13,7 +13,6 @@ import pytesseract
 
 # OpenAI API 키 설정
 pytesseract.pytesseract.tesseract_cmd = r"C:/Program Files/Tesseract-OCR/tesseract.exe"
-
  
 # 추천 결과를 JSON 파일에서 불러오기
 # 상대 경로로 JSON 파일 경로 설정

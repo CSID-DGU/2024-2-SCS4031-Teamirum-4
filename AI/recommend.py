@@ -84,6 +84,11 @@ def generate_reason_with_keywords(user_query, recommended_text, similarity_score
 
 # PDF에서 텍스트와 파일 이름 추출
 pdf_dir = "/Users/ddinga/Downloads/상품요약서"
+
+
+pdf_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../recommendations.json'))
+
+
 texts_and_filenames = extract_texts_and_filenames(pdf_dir)
 texts = [item[0] for item in texts_and_filenames]
 filenames = [item[1] for item in texts_and_filenames]
@@ -124,7 +129,8 @@ if '나이' in user_data:
 
 important_fields = ['성별', '나이', '흡연여부', '음주빈도', '운동빈도', '부양가족여부', '연소득(만원)', '가입목적', '선호보장기간', '보험료납입주기']
 user_query = ', '.join([f"{field}: {user_data.get(field, '')}" for field in important_fields])
-    
+print(user_query)
+
 # 사용자 임베딩 생성
 user_embedding = model.encode([user_query], normalize_embeddings=True)
 
@@ -143,7 +149,7 @@ for i, (rec_text, rec_filename) in enumerate(recommendations):
     # 추천 결과를 딕셔너리로 저장
     recommendation = {
         'product_name': product_name,
-        'summary_text': rec_text,
+        # 'summary_text': rec_text,
         'similarity_score': similarity_score,
         'reason': reason
     }

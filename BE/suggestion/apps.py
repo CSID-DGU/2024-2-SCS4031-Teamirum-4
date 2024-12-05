@@ -19,6 +19,7 @@ pdf_dirs = {
     "기타": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품요약서/기타')),
 }
 
+
 model = None
 
 # 데이터 저장을 위한 전역 변수
@@ -35,6 +36,7 @@ def extract_texts_and_filenames(pdf_dir):
     texts_and_filenames = []
     for filename in os.listdir(pdf_dir):
         if filename.endswith(".pdf"):
+            print(filename)
             with pdfplumber.open(os.path.join(pdf_dir, filename)) as pdf:
                 text = ""
                 for page in pdf.pages:
