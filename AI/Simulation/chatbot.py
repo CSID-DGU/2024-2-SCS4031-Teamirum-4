@@ -1,4 +1,3 @@
-import openai
 from openai import OpenAI
 import streamlit as st
 import json
@@ -13,17 +12,19 @@ from PIL import Image
 import pytesseract
 
 # OpenAI API 키 설정
-client = OpenAI(api_key="")
 pytesseract.pytesseract.tesseract_cmd = r"C:/Program Files/Tesseract-OCR/tesseract.exe"
 
-
-
-pdf_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../recommendations.json'))
-
-
+ 
 # 추천 결과를 JSON 파일에서 불러오기
+# 상대 경로로 JSON 파일 경로 설정
+pdf_dir = '/Users/jjrm_mee/Desktop/2024-2-SCS4031-Teamirum-4/recommendations.json'
+
+# 파일 존재 여부 확인
+if not os.path.exists(pdf_dir):
+    raise FileNotFoundError(f"File not found: {pdf_dir}")
+
 with open(pdf_dir, 'r', encoding='utf-8') as f:
-    recommendation_results = json.load(f) 
+    recommendation_results = json.load(f)
 
 # 텍스트 전처리 함수
 def clean_text(text):
@@ -54,10 +55,10 @@ def create_prompt(user_input, recommendation_results):
 
 # GPT 응답 생성 함수
 def ask_gpt(user_input, recommendation_results):
-    
-    # terms_dir = "C:/Users/kehah/Desktop/상품요약서"
-    terms_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품요약서/종신보험'))
-      
+    terms_dir = "/Users/jjrm_mee/Desktop/2024-2-SCS4031-Teamirum-4/상품요약서/실손보험" 
+    #terms_dir = os.path.join(os.path.dirname(__file__), "상품요약서1", "실손보험")
+ 
+    print(terms_dir)
     
     # 시스템 메시지 생성
     system_message = create_prompt(user_input, recommendation_results)
@@ -82,20 +83,17 @@ def ask_gpt(user_input, recommendation_results):
         for result in rag_results:
             terms_filename = result["product_name"]  # 파일 이름과 약관 파일명이 일치시켜야함
             terms_path = os.path.join(terms_dir, terms_filename)
-            print(terms_path)
             relevant_text = ""
         
         if os.path.exists(terms_path):
-            print('있어?')
             full_text = ""
+            print("있나용")
             try:
                 # 약관 파일 로드
-                print('약관 파일 로드')
                 if terms_path.endswith('.pdf'):
                     with pdfplumber.open(terms_path) as pdf:
                         for page in pdf.pages:
                             page_text = page.extract_text()
-                            # print(page_text)
                             if page_text:
                                 full_text += page_text + " "
                 elif terms_path.endswith('.txt'):
@@ -108,8 +106,6 @@ def ask_gpt(user_input, recommendation_results):
                 # 텍스트 전처리
                 full_text = clean_text(full_text)
                 sentences = re.split(r'(?<=[.!?])\s+', full_text)[:1000]# 문장 수 제한
-                
-                print(full_text)
 
                 # 사용자 질문과 가장 유사한 문장 찾기
                 vectorizer = TfidfVectorizer().fit(sentences)
@@ -129,10 +125,12 @@ def ask_gpt(user_input, recommendation_results):
         
         result['relevant_text'] = relevant_text
 
-    # GPT 메시지 포맷
+    # 메시지 구성 (ChatCompletion API 형식)
     messages = [
-        {"role": "system", "content": system_message},
-        {"role": "user", "content": user_input}
+        {"role": "system", "content": "당신은 보험 상품에 대한 전문가로서 사용자에게 정보를 제공합니다."},
+        {"role": "user", "content": user_input},
+        {"role": "assistant", "content": context},
+        {"role": "user", "content": "위의 정보를 바탕으로 사용자의 질문에 가장 관련 있는 답변을 제공하세요."}
     ]
 
     # GPT 호출
@@ -140,7 +138,7 @@ def ask_gpt(user_input, recommendation_results):
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=messages,
-            max_tokens=300,
+            max_tokens=1000,
             temperature=0.7,
             n=1,
             stop=None,
@@ -162,7 +160,7 @@ def ocr_image_to_text(image):
 
 
 # UI ( logo 추가 가능 )
-st.title("티미룸 보험 챗봇입니다")
+st.title("티미룸 보험 챗봇")
 
 # 세션 상태 초기화
 # 대화 이력 관리
@@ -183,13 +181,13 @@ if uploaded_file:
     st.success("이미지에서 텍스트 추출이 완료되었습니다.")  
 
  # OCR 데이터 + 사용자 입력 결합
-combined_input = f"{user_input.strip()} {ocr_text.strip()}".strip()
+#combined_input = f"{user_input.strip()} {ocr_text.strip()}".strip()
 
     
 # 세션 상태 업데이트
-if combined_input:
-    assistant_response = ask_gpt(combined_input, recommendation_results)
-    st.session_state.messages.append({"role": "user", "content": combined_input})
+if user_input:
+    assistant_response = ask_gpt(user_input, recommendation_results)
+    st.session_state.messages.append({"role": "user", "content": user_input})
     st.session_state.messages.append({"role": "assistant", "content": assistant_response})
 
     with st.chat_message("user"):

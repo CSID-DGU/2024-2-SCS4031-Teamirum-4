@@ -251,4 +251,5 @@ $RECYCLE.BIN/
 상품약관
 *.json
 
-# End of https://www.toptal.com/developers/gitignore/api/macos,windows,django,virtualenv,venv
+# End of https://www.toptal.com/developers/gitignore/api/macos,windows,django,virtualenv,venv상품약관/
+상품요약서/
