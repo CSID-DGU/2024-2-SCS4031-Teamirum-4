@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Insurance Information Form</title>
+  <title>Teamirum Information Form🔍</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
@@ -15,6 +15,8 @@
   <!-- Custom CSS -->
   <link rel="stylesheet" href="../assets/css/common_style.css">
   <link rel="stylesheet" href="../assets/css/2.info_form_style.css">
+  
+
 </head>
 
 
@@ -116,20 +118,34 @@
       </div>
     </fieldset>
 
-    <!-- 1-4. 가입 목적 및 개인 선호 -->
+    <!-- 1-4. 카테고리 및 개인 선호 -->
     <fieldset class="mb-4">
-      <legend class="form-section-title">4. 가입 목적 및 개인 선호</legend>
+      <legend class="form-section-title">4. 보험 카테고리 및 개인 선호</legend>
       <div class="form-group">
-        <label for="purpose">가입 목적</label>
-        <select id="purpose" class="form-control" required>
-          <option value="" disabled selected>선택해주세요</option>
-          <option value="retirement">은퇴 준비</option>
-          <option value="education">자녀 교육</option>
-          <option value="investment">재산 투자</option>
+        <label for="category">가입목적</label>
+        <select id="category" class="form-control" required>
+            <option value="" disabled selected>선택해주세요</option>
+            <option value="정기보험">정기보험</option>
+            <option value="건강보험">건강보험(암 등)</option>
+            <option value="종신보험">종신보험</option>
+            <option value="실손보험">실손보험</option>
+            <option value="기타">기타</option>
         </select>
       </div>
+      <!--복수 선택-->
+      <!--<div class="form-group">
+        <label for="category">카테고리</label>
+        <select id="category" class="form-control" multiple required>
+            <option value="정기보험">정기보험</option>
+            <option value="건강보험">건강보험(암 등)</option>
+            <option value="종신보험">종신보험</option>
+            <option value="실손보험">실손보험</option>
+            <option value="기타">기타</option>
+        </select>
+        <small class="form-text text-muted">다중 선택 가능합니다. 선택하려면 Ctrl(Windows) 또는 Command(Mac)을 누르고 클릭하세요.</small>
+      </div>-->
       <div class="form-group">
-        <label for="coverage-period">선호 보장기간</label>
+        <label for="coverage-period">선호 보장 기간</label>
         <select id="coverage-period" class="form-control" required>
           <option value="" disabled selected>선택해주세요</option>
           <option value="short">10년 이하</option>
@@ -150,11 +166,12 @@
 
     <!-- 제출 버튼 -->
     <div class="text-center">
-      <button type="submit" class="btn btn-primary">제출하기</button>
+      <button type="submit" class="btn btn-primary custom-submit-btn">제출하기</button>
     </div>
+
   </form>
 
   <!-- JavaScript 연결 -->
-  <script src="../assets/js/2.info_form.js"></script>
+  <script src="../assets/js/2.info_form.js?v=1.0.1"></script>
 </div>
 </body>
