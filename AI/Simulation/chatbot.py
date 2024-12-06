@@ -156,10 +156,92 @@ def ocr_image_to_text(image):
     except Exception as e:
         return f"Error during OCR processing: {str(e)}"
 
+# 🟢🟢🟢해시태그 추출함수
+def extract_hashtags(raw_content):
+    okt = Okt()
+    nouns = okt.nouns(raw_content)
+    unique_nouns = list(set(nouns))
+    hashtags = " ".join([f"#{noun}" for noun in unique_nouns])
+    return hashtags
+
+# 페이지 레이아웃 설정
+# 페이지 설정
+st.set_page_config(page_title="대화형 챗봇", layout="wide")
+
+# 전체 레이아웃
+#col1, col2 = st.columns([1, 1])  # 왼쪽 사이드바(1)와 오른쪽 메인 챗봇(2) 비율
+
+# **사이드바**: 추천 보험 출력
+#with col1:
+   
+
+#유사도 내림차순
+recommendation_results_sorted = sorted(
+    recommendation_results,
+    key=lambda x: x.get("similarity_score", 0.0),
+    reverse=True
+)
+
+#사이드바 제목
+st.sidebar.markdown(
+    "<div style='font-size:20px; font-weight:bold; text-align:center;'>추천된 보험 Top 3</div><hr>",
+    unsafe_allow_html=True
+)
+
+# 추천 결과 출력
+for idx,rec in enumerate(recommendation_results):
+    product_name = rec.get("product_name", "상품명 없음").replace(".pdf", "")
+    similarity_score = rec.get("similarity_score", 0.0)
+    reason = rec.get("reason", "")
+
+    # 괄호 안의 내용 추출 및 중복 제거
+    if "(" in reason and ")" in reason:
+        raw_content = reason[reason.find("(") + 1:reason.find(")")]  # 괄호 안 추출
+        hashtags =  extract_hashtags(raw_content)
+    else:
+        hashtags = "#추천이유 없음"
+    print("hashtags: ", hashtags)
+
+    # 범주화 및 신호등 색상 아이콘 설정
+    if idx == 0:
+        category = "매우 적합"
+        icon = "🟢"  # 초록 신호등
+        font_color = "black"
+    elif idx < 3:
+        category = "적합"
+        icon = "🟠"  # 주황 신호등
+        font_color = "black"
+    else:
+        break  # 상위 3개까지만 표시
+    
+    # 사이드바에 표시
+    st.sidebar.markdown(
+        f"<div style='font-size:18px; color:{font_color}; font-weight:bold;'>"
+        f"<b>{product_name}</b></div>", 
+        unsafe_allow_html=True
+    )
+    st.sidebar.markdown(f"**평가**: {icon} ({category})", unsafe_allow_html=False)
+
+    st.sidebar.markdown(
+        f"<p style = 'font-size:14px; color:gray;'>추천 이유: {hashtags}</p>",
+        unsafe_allow_html=True
+    )
+    # 구분선 추가
+    st.sidebar.markdown("<hr>", unsafe_allow_html=True)
 
 
-# UI ( logo 추가 가능 )
-st.title("티미룸 보험 챗봇")
+# **메인 영역**: 챗봇 UI
+#with col2:
+    # 제목
+st.markdown(
+    """
+    <div style='text-align:center; font-size:30px; font-weight:bold;'>
+        티미룸 보험 챗봇 👋
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
+# 🟢🟢🟢st 변경
 
 # 세션 상태 초기화
 # 대화 이력 관리
