@@ -5,6 +5,7 @@ import cv2
 from pdf2image import convert_from_path
 import base64
 import io
+import os
 import pandas as pd
 
 # 클로바 OCR API 정보
@@ -18,7 +19,8 @@ def clean_text(text):
 
 def convert_pdf_to_image(pdf_path):
     images = convert_from_path(pdf_path, dpi=300)
-    image_path = "/tmp/output_image.jpg"
+    # image_path = "/tmp/output_image.jpg"
+    image_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../output_image.jpg'))
     images[0].save(image_path, "JPEG")
     return image_path
 
@@ -72,6 +74,7 @@ def parse_table_using_bounding_box(ocr_response):
     max_columns = max(len(row) for row in rows)
     rows = [row + [""] * (max_columns - len(row)) for row in rows]  # 열 개수 맞추기
     df = pd.DataFrame(rows)
+    
     return df
 
 def extract_medical_info(pdf_path):
@@ -81,9 +84,11 @@ def extract_medical_info(pdf_path):
     return df
 
 if __name__ == "__main__":
-    pdf_path = "/Users/ddinga/Downloads/진료비계산서.pdf"
+    # pdf_path = "/Users/ddinga/Downloads/진료비계산서.pdf"
+    pdf_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../진료비계산서.pdf'))
     try:
         table_df = extract_medical_info(pdf_path)
+        
         print("=== OCR 추출 테이블 ===")
         print(table_df)
     except Exception as e:
