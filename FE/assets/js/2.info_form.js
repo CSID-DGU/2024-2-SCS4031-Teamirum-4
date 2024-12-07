@@ -12,7 +12,6 @@ document.addEventListener("DOMContentLoaded", () => {
             submitButton.style.transform = "scale(1.05)"; // 크기 확대
             submitButton.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.2)"; // 그림자
         });
-
         submitButton.addEventListener("mouseout", () => {
             submitButton.style.backgroundColor = "#606b77"; // 기본 색상 복구
             submitButton.style.transform = "scale(1)";
@@ -23,7 +22,6 @@ document.addEventListener("DOMContentLoaded", () => {
         submitButton.addEventListener("mousedown", () => {
             submitButton.style.transform = "scale(0.95)"; // 크기 축소
         });
-
         submitButton.addEventListener("mouseup", () => {
             submitButton.style.transform = "scale(1.05)"; // 크기 복구
         });
@@ -137,6 +135,9 @@ document.addEventListener("DOMContentLoaded", () => {
             //로컬 저장소에 이름 저장
             localStorage.setItem("userName", jsonData.기본정보.이름);
             
+            //로컬 저장소에 입력 정보 모두 저장
+            localStorage.setItem("userInfo", JSON.stringify(jsonData)); // 유저 정보 저장
+
             // 로컬 저장소에 추천 데이터 저장
             localStorage.setItem("recommendationData", JSON.stringify(responseBody));
             console.log("추천 데이터 저장 성공");
@@ -146,7 +147,10 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("이동할 URL:", "3.rec.html");
 
             console.log("window.location.href 호출 시도...");
-            window.location.href = "3.rec.html";
+            setTimeout(() => {
+                console.log("Navigating to 3.rec.html");
+                window.location.href = "3.rec.html";
+            }, 0);
             console.log("window.location.href 호출 완료.");
             document.body.removeChild(popup); // 팝업창 제거
 

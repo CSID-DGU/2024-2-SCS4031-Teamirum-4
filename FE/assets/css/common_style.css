@@ -23,3 +23,70 @@ body {
     height: 50px; /* 기본 크기 */
     cursor: pointer;
 }
+
+/* Footer 스타일 */
+.footer {
+    background-color: #ffffff;
+    padding: 30px;
+    box-shadow: 0px 2px 5px rgba(0.1, 0, 0, 0);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* 맨 위 로고는 왼쪽 정렬 */
+    gap: 20px; /* 섹션 간 간격 */
+  }
+  
+  /* Footer 로고 스타일 */
+  .footer-logo {
+    max-width: 200px;
+    margin-bottom: 10px;
+  }
+  
+  /* Footer 전체 콘텐츠 중앙 정렬 */
+  .footer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* 중앙 정렬 */
+    width: 100%;
+    text-align: center; /* 텍스트 중앙 정렬 */
+  }
+  
+  /* 설명 텍스트 스타일 */
+  .footer-description {
+    font-size: 20px;
+    line-height: 1.5;
+    color: #333;
+    font-weight: 400;
+    text-align: center;
+  }
+  
+  .footer-description .highlight-blue {
+    color: #0056b3; /* 어두운 파란색 */
+    font-weight: 700; /* 볼드체 */
+  }
+  
+  .footer-description .highlight-black {
+    color: #000; /* 검정색 */
+    font-weight: 700; /* 볼드체 */
+  }
+  
+  /* 보험사 로고 섹션 */
+  .insurance-logos {
+    display: flex;
+    justify-content: center; /* 중앙 정렬 */
+    align-items: center;
+    gap: 20px; /* 로고 간 간격 */
+  }
+  
+  .insurance-logos img {
+    max-width: 120px;
+    height: auto;
+  }
+  
+  /* Footer 정보 스타일 */
+  .footer-info {
+    font-size: 14px;
+    color: #555;
+    text-align: center; /* 텍스트 중앙 정렬 */
+    line-height: 1.5;
+    margin-top: 10px;
+  }
