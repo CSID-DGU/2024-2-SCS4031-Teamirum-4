@@ -88,9 +88,9 @@ document.addEventListener("DOMContentLoaded", () => {
             "가입목적및개인선호": {
                 "카테고리": getValue("category"),
                 "선호보장기간": convertToKorean("coverage-period", {
-                    short: "10년 이하",
-                    medium: "10~20년",
-                    long: "20년 이상"
+                    10: "10년 이하",
+                    20: "10~20년",
+                    20: "20년 이상"
                 }),
                 "보험료납입주기": convertToKorean("payment-frequency", {
                     monthly: "월납",
