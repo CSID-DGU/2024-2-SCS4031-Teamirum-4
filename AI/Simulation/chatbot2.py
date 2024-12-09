@@ -1,5 +1,8 @@
 #from openai import OpenAI
 import streamlit as st
+
+st.set_page_config(page_title="티미룸 보험 챗봇", layout="wide")
+
 import json
 import os
 import re
@@ -27,7 +30,7 @@ def clean_text(text):
 
 
 def ask_gpt(user_input, recommendation_results):
-    terms_dir = "/Users/ddinga/Downloads/약관실손보험" 
+    terms_dir = "C:/Users/kehah/Desktop/실손보험" 
     
     # 추천된 상품의 관련 내용을 수집
     context = "아래는 추천된 보험 상품 목록과 관련 내용입니다:\n"
@@ -94,7 +97,7 @@ def ask_gpt(user_input, recommendation_results):
             model="gpt-3.5-turbo",
             messages=messages,
             max_tokens=300,
-            temperature=0.7,
+            temperature=0.4,
             n=1,
             stop=None,
         )
@@ -116,7 +119,7 @@ def extract_hashtags(raw_content):
 
 #🟢🟢 페이지 레이아웃 설정
 
-st.set_page_config(page_title="티미룸 보험 챗봇", layout="wide")
+
 
 
 # CSS 파일 로드 함수
@@ -145,18 +148,26 @@ st.sidebar.markdown(
 )
 
 # 추천 결과 출력
-for idx,rec in enumerate(recommendation_results):
+for idx, rec in enumerate(recommendation_results):
+    # 상품명과 유사도 점수 가져오기
     product_name = rec.get("product_name", "상품명 없음").replace(".pdf", "")
     similarity_score = rec.get("similarity_score", 0.0)
+    
+    # 추천 이유와 키워드 가져오기
     reason = rec.get("reason", "")
+    keywords = rec.get("keywords", ["#추천이유 없음"])  # 키워드가 없을 경우 기본값 설정
 
-    # 괄호 안의 내용 추출 및 중복 제거
-    if "(" in reason and ")" in reason:
-        raw_content = reason[reason.find("(") + 1:reason.find(")")]  # 괄호 안 추출
-        hashtags =  extract_hashtags(raw_content)
+    if keywords:
+        hashtags = " ".join(keywords)  # 키워드를 문자열로 결합
     else:
         hashtags = "#추천이유 없음"
-    print("hashtags: ", hashtags)
+
+    # 결과 출력
+    print(f"상품명: {product_name}")
+    #print(f"유사도 점수: {similarity_score:.2f}")
+    #print(f"추천 이유: {reason}")
+    print(f"키워드: {hashtags}")
+    print("-" * 30)
 
     # 범주화 및 신호등 색상 아이콘 설정
     if idx == 0:
@@ -235,6 +246,16 @@ if "messages" not in st.session_state:
         {"role": "system", "content": "당신은 보험 전문가입니다. 사용자에게 정보를 제공합니다."}
     ]
 
+for message in st.session_state.messages:  # 저장된 메시지 이력을 반복
+    role = message["role"]
+    content = message["content"]
+    if role == "user":  # 사용자의 메시지
+        with st.chat_message("user"):
+            st.markdown(content)
+    elif role == "assistant":  # 챗봇의 응답
+        with st.chat_message("assistant"):
+            st.markdown(content)
+
 # 파일 업로드 UI
 uploaded_file = st.file_uploader("이미지 파일을 업로드하세요 (PNG, JPG)", type=["png", "jpg", "jpeg"])
 
@@ -250,23 +271,30 @@ st.markdown(
 # 공백 추가
 st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
     
+
 user_input = st.text_input("질문을 입력하세요:")
 
 
+# 🟢 사용자 입력 처리 🟢
 if user_input:
+    # GPT 응답 생성
     assistant_response = ask_gpt(user_input, recommendation_results)
-    st.session_state.messages.append({"role": "user", "content": user_input})
-    st.session_state.messages.append({"role": "assistant", "content": recommendation_results})
 
+    # 세션 상태에 사용자 입력 및 챗봇 응답 저장
+    st.session_state.messages.append({"role": "user", "content": user_input})
+    st.session_state.messages.append({"role": "assistant", "content": assistant_response})
+
+    # 새로 입력된 메시지를 즉시 출력
     with st.chat_message("user"):
         st.markdown(user_input)
     with st.chat_message("assistant"):
         st.markdown(assistant_response)
+
 else:
     st.write("질문을 입력하거나 이미지 파일을 업로드하세요.")
 
-st.write("Debug: user_input =", user_input)
-st.write("Debug: messages =", st.session_state.messages)
+# st.write("Debug: user_input =", user_input)
+# st.write("Debug: messages =", st.session_state.messages)
 
 #🟢🟢🟢🟢 UI
 # 흰색 컨테이너 생성
@@ -305,7 +333,7 @@ image_3_path = "C:/Users/kehah/Desktop/2024-2-SCS4031-Teamirum-4/AI/Simulation/i
 image_4_path = "C:/Users/kehah/Desktop/2024-2-SCS4031-Teamirum-4/AI/Simulation/img/qna.png"
 image_5_path = "C:/Users/kehah/Desktop/2024-2-SCS4031-Teamirum-4/AI/Simulation/img/heart.png"
 link5 = "https://pub.insure.or.kr/#fsection01"
-image_3_path = "images/image3.jpg"
+#image_3_path = "images/image3.jpg"
 
 
 
@@ -359,7 +387,7 @@ with col6:
 # 네 번째 콘텐츠 (2칸 차지)
 with col8:
     st.markdown(
-        f'<a href="{link5}" target="_blank" style="text-decoration:none; font-size:16px;">👉 생명보험 공시실 바로가기</a>',
+        f'<a href="{link5}" target="_blank" style="text-decoration:none; font-size:16px;">👉 자주 묻는 질문 확인하기</a>',
         unsafe_allow_html=True,
     )
 
