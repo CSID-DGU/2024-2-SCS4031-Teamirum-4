@@ -87,11 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             "가입목적및개인선호": {
                 "카테고리": getValue("category"),
-                "선호보장기간": convertToKorean("coverage-period", {
-                    10: "10년 이하",
-                    20: "10~20년",
-                    20: "20년 이상"
-                }),
+                "선호보장기간": parseInt(getValue("coverage-period"), 10), // 숫자 값 전송
                 "보험료납입주기": convertToKorean("payment-frequency", {
                     monthly: "월납",
                     quarterly: "분기납",
@@ -117,6 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.appendChild(popup);
 
 
+        // Replace this section inside the fetch response handling
         try {
             console.log("서버로 데이터 전송 시작");
             const response = await fetch("http://127.0.0.1:8000/api/v1/suggestion/suggest", {
@@ -132,33 +129,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error(responseBody.message || "추천 데이터를 불러오는 중 문제가 발생했습니다.");
             }
 
-            //로컬 저장소에 이름 저장
+            // 로컬 저장소에 데이터 저장
             localStorage.setItem("userName", jsonData.기본정보.이름);
-            
-            //로컬 저장소에 입력 정보 모두 저장
-            localStorage.setItem("userInfo", JSON.stringify(jsonData)); // 유저 정보 저장
-
-            // 로컬 저장소에 추천 데이터 저장
             localStorage.setItem("recommendationData", JSON.stringify(responseBody));
             console.log("추천 데이터 저장 성공");
 
-            // 페이지 이동 테스트 코드
-            console.log("현재 URL:", window.location.href);
-            console.log("이동할 URL:", "3.rec.html");
+            // 팝업창 제거
+            if (popup) {
+                document.body.removeChild(popup);
+            }
 
-            console.log("window.location.href 호출 시도...");
+            // 3.rec.html로 안전하게 이동
             setTimeout(() => {
                 console.log("Navigating to 3.rec.html");
-                window.location.href = "3.rec.html";
-            }, 0);
-            console.log("window.location.href 호출 완료.");
-            document.body.removeChild(popup); // 팝업창 제거
-
-        } catch (error) {
-            console.error("서버 요청 중 오류 발생:", error.message);
-            alert("서버와 통신 중 문제가 발생했습니다. 다시 시도해주세요.");
-            document.body.removeChild(popup); // 팝업창 제거
-        }
+                try {
+                    window.location.href = "3.rec.html"; // Simple navigation
+                    console.log("window.location.href executed successfully.");
+                }catch (err) {
+                    console.error("Error during navigation:", err.message);
+                    alert("An error occurred while navigating. Please try again.");
+                }
+            }, 100);
+            
+        }  catch (error) {
+                console.error("서버 요청 중 오류 발생:", error.message);
+                alert("서버와 통신 중 문제가 발생했습니다. 다시 시도해주세요.");
+            }
     });
 
     // 헬퍼 함수: 필드 값 가져오기
