@@ -124,11 +124,9 @@ def json_to_query(data):
                     age_group = '60대 이상'
                 result["나이"] = age_group
             
-            elif key == '카테고리':
-                continue  # 카테고리는 포함하지 않음
             
-            elif key == '선호보장기간':
-                result['선호보장기간'] = 10
+            # elif key == '선호보장기간':
+            #     result['선호보장기간'] = 10
             
             else:
                 result[key] = value
