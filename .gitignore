@@ -249,7 +249,6 @@ $RECYCLE.BIN/
 # 보험 약관
 상품요약서
 상품약관
-*.json
 *.pdf
 *.jpg
 

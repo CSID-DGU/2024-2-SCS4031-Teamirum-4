@@ -95,6 +95,7 @@ def calculate_text_similarity(user_input, product_text, model):
 # 추천 이유 생성 함수
 def generate_reasons(user_input, product_text):
     reasons = []
+    keywords = [] # 키워드 추출
     for field, user_value in user_input.items():
         if field in numeric_fields:
             user_value = float(user_value)
@@ -104,9 +105,11 @@ def generate_reasons(user_input, product_text):
                 closest_value = min(product_values, key=lambda x: abs(x - user_value))
                 if abs(user_value - closest_value) / user_value < 0.1:  # 10% 이내 차이로 유사하면 이유 추가
                     reasons.append(f"{field}이(가) 유사합니다.")
+                    keywords.append(f"#{field}") # 키워드 추출
         elif field in text_fields:
             if str(user_value) in product_text:
                 reasons.append(f"{field}이(가) 일치합니다.")
+                keywords.append(f"#{field}") # 키워드 추출 
     return reasons
 
 # 보험상품별 점수 계산 및 추천
@@ -132,10 +135,12 @@ def recommend_top_k_products(user_input, pdf_dir, model, k=3):
     for idx, (filename, product_text) in enumerate(texts_and_filenames):
         total_score = 0.5 * numeric_similarities[idx] + 0.5 * text_similarities[idx]
         reasons = generate_reasons(user_input, product_text)
+        reasons, keywords = generate_reasons(user_input, product_text) # 키워드 추출
         results.append({
             "상품명": filename,
             "총점": total_score,
             "추천 이유": ", ".join(reasons),
+            "추천 키워드": keywords, # 키워드 추출
         })
 
     results = sorted(results, key=lambda x: x["총점"], reverse=True)
@@ -153,7 +158,8 @@ for idx, rec in enumerate(top_3_recommendations):
     recommendation = {
         'product_name': rec['상품명'],
         'similarity_score': rec['총점'],
-        'reason': rec['추천 이유']
+        'reason': rec['추천 이유'],
+        'keywords': rec['추천 키워드'] # 키워드 추출
     }
     
     recommendation_results.append(recommendation)

@@ -1,0 +1,202 @@
+/* styles.css */
+/* 전체 페이지 배경 */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #4a148c; /* 보라색 배경 */
+    color: white;
+    font-family: Arial, sans-serif;
+}
+
+/* 로고 및 제목 */
+.header {
+    text-align: center;
+    padding: 20px;
+    background-color: #ffffff; /* 배경색 설정 */
+    border-radius: 10px; /* 모서리를 둥글게 */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 약간의 그림자 추가 */
+    border: 1px solid #d3d3d3; /* 회색 테두리 설정 */
+}
+
+.header h1 {
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+/* 사이드바 컨테이너 */
+/* 사이드바 전체 스타일 */
+[data-testid="stSidebar"] {
+    background-color:rgba(207, 243, 133, 0.1) !important; /* 하늘색 배경 */
+    color: #000000; /* 텍스트 색상 검정 */
+    padding: 15px; /* 내부 여백 */
+    border-right: 2px solid #CFF385; /* 오른쪽 테두리 추가 (선택사항) */
+}
+
+.sidebar-container {
+    background-color:rgba(140, 118, 200, 0.7); 
+    padding: 5px; /* 내부 여백 */
+    border-radius: 10px; /* 모서리를 둥글게 */
+    text-align: center; /* 텍스트 가운데 정렬 */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 약간의 그림자 추가 */
+}
+
+.sidebar-container h2 {
+    font-size: 20px; /* 글씨 크기 */
+    font-weight: bold; /* 글씨 굵게 */
+    color: white; /* 글씨 색상 흰색 */
+    margin: 20; /* 여백 제거 */
+}
+
+/* 고정 상단 메시지 스타일 */
+.fixed-header {
+    background-color: #f0f0f0 !important;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.fixed-header h2 {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+
+
+.fixed-header ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.fixed-header li {
+    margin: 5px 0;
+    font-size: 16px;
+}
+
+.fixed-header a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.fixed-header a:hover {
+    text-decoration: underline;
+}
+
+.fixed-header .qna-button {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 10px 20px;
+    background-color: #9bcf3b;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+.fixed-header .qna-button:hover {
+    background-color: #85b831;
+}
+
+.fixed-footer {
+    position: fixed;
+    bottom: 0; /* 화면 하단에 고정 */
+    left: 0;
+    width: 100%; /* 화면 전체 너비 */
+    background-color: #f0f0f0; /* 밝은 회색 배경 */
+    padding: 10px;
+    text-align: center;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1); /* 그림자 효과 */
+    z-index: 1000; /* 다른 요소 위에 표시 */
+}
+
+
+
+
+/* 컨테이너 간의 공백 */
+.container-spacing {
+    margin-bottom: 20px; /* 각 컨테이너 간 간격 추가 */
+}
+
+.chat-input {
+    position: fixed; /* 화면에 고정 */
+    bottom: 0; /* 화면 하단에 배치 */
+    width: 100%; /* 화면 전체 너비 사용 */
+    background-color: #ffffff; /* 배경색 */
+    padding: 10px 15px; /* 내부 여백 */
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1); /* 상단 그림자 */
+    z-index: 1000; /* 다른 요소 위에 배치 */
+}
+
+.chat-input-container {
+    max-width: 800px; /* 입력창의 최대 너비 */
+    margin: auto; /* 가운데 정렬 */
+    display: flex; /* 플렉스박스 사용 */
+    align-items: center; /* 세로 정렬 */
+    gap: 10px; /* 요소 간 간격 */
+}
+
+.chat-input textarea {
+    flex: 1; /* 입력창 확장 */
+    border: 1px solid #ddd; /* 테두리 */
+    border-radius: 10px; /* 둥근 모서리 */
+    padding: 10px; /* 내부 여백 */
+    font-size: 16px; /* 글자 크기 */
+    resize: none; /* 크기 조정 비활성화 */
+}
+
+.chat-input button {
+    background-color: #4CAF50; /* 버튼 색상 */
+    color: #ffffff; /* 글자 색상 */
+    border: none; /* 테두리 제거 */
+    border-radius: 10px; /* 둥근 모서리 */
+    padding: 10px 20px; /* 버튼 여백 */
+    cursor: pointer; /* 마우스 커서 포인터 */
+    font-size: 16px; /* 글자 크기 */
+}
+
+.chat-input button:hover {
+    background-color: #45a049; /* 마우스 올렸을 때 색상 */
+}
+
+
+/* 제목 스타일 */
+.title-container {
+    text-align: center;
+    background-color: #4CAF50; /* 초록색 */
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+.title-container h1 {
+    font-size: 36px;
+    font-weight: bold;
+}
+
+.custom-image {
+    width: 80px; /* 이미지 너비 */
+    height: 80px; /* 이미지 높이 */
+    object-fit: cover; /* 이미지를 영역에 맞게 자르거나 축소 */
+    margin: 0 auto; /* 가운데 정렬 */
+}
+
+
+/* 파일 업로드 컨테이너 스타일 */
+.file-upload-container {
+    background-color: #f9f9f9; /* 배경색 */
+    border: 2px dashed #4CAF50; /* 테두리: 녹색 점선 */
+    border-radius: 10px; /* 둥근 테두리 */
+    padding: 20px; /* 내부 여백 */
+    margin: 20px 0; /* 상하 간격 */
+    text-align: center; /* 중앙 정렬 */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 그림자 */
+    transition: transform 0.2s ease; /* 호버 효과 */
+}
+.file-upload-container:hover {
+    transform: scale(1.02); /* 호버 시 확대 */
+    background-color: #e8f5e9; /* 호버 시 배경색 */
+}
