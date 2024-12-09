@@ -14,7 +14,7 @@ from konlpy.tag import Okt
 import unicodedata
 
 # OpenAI API 키 설정
-openai.api_key 
+openai.api_key
 
 # 추천 결과 로드
 with open('recommendationstest.json', 'r', encoding='utf-8') as f:
@@ -140,7 +140,7 @@ def ask_gpt(user_input, recommendation_results):
         return handle_specific_product_logic("교보생명-실손의료비보험(갱신형)Ⅲ[계약전환용]")
     else:
         # 그렇지 않으면 기존 로직 실행
-        terms_dir = "/Users/ddinga/Downloads/약관실손보험" 
+        terms_dir = "/Users/ddinga/Downloads/약관실손보험"
         context = "아래는 추천된 보험 상품 목록과 관련 내용입니다:\n"
         for idx, rec in enumerate(recommendation_results):
             product_name = rec.get('product_name', '상품명 없음')
@@ -183,7 +183,13 @@ def ask_gpt(user_input, recommendation_results):
             
             rec['relevant_text'] = relevant_text
             context += f"{idx+1}. {product_name}: {relevant_text}\n"
-        
+
+        # system_message = """
+        #     당신은 보험 상품 전문 컨설턴트입니다. 
+        #     아래는 추천된 보험 상품 목록과 해당 상품 약관에서 추출한 관련 정보입니다. 
+        #     사용자가 질문하는 내용에 대해 반드시 아래 정보에서 근거를 찾아 답변하세요.
+        #     가능한 한 구체적으로 약관 내용과 추천 사유에서 발췌하여 답변해줘.
+        #     """
         messages = [
             {"role": "system", "content": "당신은 보험 상품에 대한 전문가로서 사용자에게 정보를 제공합니다. 다음은 관련 정보입니다:\n" + context},
             {"role": "user", "content": user_input}
@@ -193,8 +199,8 @@ def ask_gpt(user_input, recommendation_results):
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=messages,
-                max_tokens=300,
-                temperature=0.7,
+                max_tokens=500,
+                temperature=0.35,
                 n=1,
                 stop=None,
             )
@@ -266,6 +272,7 @@ st.sidebar.markdown(
     <div class="sidebar-container">
         <h2>추천 보험 TOP 3</h2>
     </div>
+    </br>
     """,
     unsafe_allow_html=True,
 )
@@ -325,7 +332,7 @@ st.sidebar.markdown(
         <ul>
             <li>Q. 보험 가입 시 가장 중요한 점은?</li>
             <li>Q. 제 기준에서 해당 보험 가입시 보장 금액은 얼마나 나오나요?</li>
-            <li>Q. 보험 약관을 확인하려면 어떻게 해야 하나요?</li>
+            <li>Q. 보험금을 보장받지 못하는 경우는 뭐가 있나요?</li>
             <li>Q. 추천받은 보험의 청구 절차가 어떻게 되나요?</li>
             <li>Q. 추천받은 보험의 보험금 지급기준이 어떻게 되나요?</li>
             <li>Q. 추천받은 보험의 해약환급금을 알려주세요</li>
