@@ -19,8 +19,8 @@ def clean_text(text):
 
 def convert_pdf_to_image(pdf_path):
     images = convert_from_path(pdf_path, dpi=300)
-    # image_path = "/tmp/output_image.jpg"
-    image_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../output_image.jpg'))
+    image_path = "/tmp/output_image.jpg"
+    #image_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../output_image.jpg'))
     images[0].save(image_path, "JPEG")
     return image_path
 
@@ -116,26 +116,61 @@ def extract_key_value_pairs(ocr_response, keywords, y_tolerance=55, x_tolerance=
 
     return key_value_pairs
 
+def format_date(date_str):
+    """
+    날짜 문자열을 'YYYY-MM-DD' 형식으로 변환합니다.
+    예: '20241030' -> '2024-10-30'
+    """
+    if len(date_str) == 8 and date_str.isdigit():
+        return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}"
+    return date_str
+    
+def save_to_json(data, output_path):
+    """
+    데이터를 JSON 파일로 저장합니다.
+    """
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
-# OCR 실행 후 키워드-값 추출
+def clean_key(key):
+    """
+    키에서 숫자를 제거하여 새로운 키를 반환합니다.
+    예: '6진료비총액' -> '진료비총액'
+    """
+    return re.sub(r'^\d+', '', key).strip()
+
 def extract_key_value_from_pdf(pdf_path):
     image_path = convert_pdf_to_image(pdf_path)
     ocr_response = call_clova_ocr_api(image_path)
     
     # 찾고자 하는 키워드 목록
-    keywords = ["6진료비총액", "7공단부담총액", "9이미납부한금액"]
+    keywords = ["진료기간", "6진료비총액", "7공단부담총액", "9이미납부한금액"]
     key_value_pairs = extract_key_value_pairs(ocr_response, keywords)
     
-    return key_value_pairs
+    # 진료기간 포맷 수정 및 데이터 정리
+    cleaned_data = {}
+    for key, value in key_value_pairs:
+        if key == "진료기간":
+            cleaned_data[clean_key(key)] = format_date(value)  # 진료기간 포맷 변경
+        else:
+            cleaned_data[clean_key(key)] = value  # 숫자 제거 후 저장
+    
+    return cleaned_data
 
 if __name__ == "__main__":
-    pdf_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../진료비계산서.pdf'))
+    pdf_path = "/Users/ddinga/Downloads/진료비계산서.pdf"
+    output_json_path = os.path.join(os.getcwd(), "진료비_결과.json")  # 현재 작업 디렉토리에 저장
     try:
-        key_value_results = extract_key_value_from_pdf(pdf_path) # 키워드 저장 되는 리스트
+        extracted_data = extract_key_value_from_pdf(pdf_path)
+        
+        # JSON 파일로 저장
+        save_to_json(extracted_data, output_json_path)
         
         print("=== 키워드-값 추출 결과 ===")
-        for key, value in key_value_results:
+        for key, value in extracted_data.items():
             print(f"{key}: {value}")
-            
+        
+        print(f"\nJSON 파일로 저장 완료: {output_json_path}")
+        
     except Exception as e:
         print(f"오류 발생: {e}")
