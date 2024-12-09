@@ -20,24 +20,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const titleElement = document.createElement("h1");
     titleElement.className = "form-title";
     titleElement.style.textAlign = "center";
-    titleElement.style.fontSize = "28px"; // 글씨 크기 키움
+    titleElement.style.fontSize = "28px";
     titleElement.style.fontWeight = "bold";
     titleElement.textContent = `${userName}님의 정보에 기반하여 추천하는 보험 상품입니다.🤓`;
     recommendationContainer.appendChild(titleElement);
 
-    // 입력 정보 표시 (카드 스타일)
+    // 입력 정보 표시
     const userInfoSection = document.createElement("div");
     userInfoSection.className = "user-info-card";
     userInfoSection.style.border = "1.5px solid #2094f3";
     userInfoSection.style.borderRadius = "10px";
     userInfoSection.style.margin = "20px auto";
     userInfoSection.style.padding = "20px";
-    userInfoSection.style.backgroundColor = "#e8f4ff"; // 밝은 파란색 배경
-    userInfoSection.style.color = "#003366"; // 진한 파란색 텍스트
+    userInfoSection.style.backgroundColor = "#e8f4ff";
+    userInfoSection.style.color = "#003366";
     userInfoSection.style.width = "40%";
-    userInfoSection.style.fontFamily = "'Noto Sans', sans-serif";
 
-    // 입력 정보 제목 추가 (카드 내부에 포함)
     userInfoSection.innerHTML = `
         <h2 style="text-align: center; font-size: 22px; margin-bottom: 20px;">
             입력한 정보 다시보기🔍
@@ -46,17 +44,15 @@ document.addEventListener("DOMContentLoaded", () => {
             ${Object.entries(userInfo)
                 .map(([key, value]) => {
                     if (typeof value === "object") {
-                        return `<li style="margin-bottom: 10px;"><strong>${key}:</strong> ${Object.entries(value)
+                        return `<li><strong>${key}:</strong> ${Object.entries(value)
                             .map(([subKey, subValue]) => `${subKey}: ${subValue}`)
                             .join(", ")}</li>`;
                     }
-                    return `<li style="margin-bottom: 10px;"><strong>${key}:</strong> ${value}</li>`;
+                    return `<li><strong>${key}:</strong> ${value}</li>`;
                 })
                 .join("")}
         </ul>
     `;
-
-    // 입력 정보 카드를 추천 리스트 위에 삽입
     recommendationContainer.appendChild(userInfoSection);
 
     // 구분선 추가
@@ -67,30 +63,39 @@ document.addEventListener("DOMContentLoaded", () => {
     divider.style.margin = "20px auto";
     recommendationContainer.appendChild(divider);
 
-    // 추천 데이터를 화면에 표시
+    // 로고 경로 매핑
+    const logoPathMap = {
+        "신한라이프": "../assets/images/rec_shinhan_logo.png",
+        "한화생명": "../assets/images/rec_hanwha_logo.png",
+        "삼성생명": "../assets/images/rec_samsung_logo.png",
+        "교보생명": "../assets/images/rec_kyobo_logo.jpg",
+    };
+
+    // 추천 데이터 렌더링
     recommendationData.recommendations.forEach((item, index) => {
         const cleanedTitle = (item.product_name || "상품 이름 없음")
             .replace(/^추천\s*/, "")
             .replace(/\.pdf$/i, "");
 
         const companyName = cleanedTitle.split('-')[0].trim();
+        console.log(`companyName: ${companyName}`);
+
         const hashtags = (item.reason || "")
-            .match(/([가-힣]+이\(가\))/g)
-            ?.map(keyword => `#${keyword.replace(/이$begin:math:text$가$end:math:text$/, "")}`)
-            ?.map(tag => tag.replace(/이\(가\)$/, "")) // "이(가)" 제거
-            .join(" ") || "";
+            .match(/([가-힣]+이\(가\))/g)// 한국어 단어만 추출
+            ?.map(tag => `#${tag.replace(/이\(가\)$/, "")}`) // "이(가)"를 제거하고 해시태그 추가
+            ?.join(" ") || "";// 배열을 문자열로 변환
 
         const evaluationText = index === 0 ? "매우 적합" : "적합";
         const evaluationColor = index === 0 ? "#00cc66" : "#ffa500";
 
-        const logoPathMap = {
-            "신한라이프": "../assets/images/rec_shinhan_logo.png",
-            "한화생명": "../assets/images/rec_hanwha_logo.png",
-            "삼성생명": "../assets/images/rec_samsung_logo.png",
-            "교보생명": "../assets/images/rec_kyobo_logo.jpg",
-        };
-        const logoPath = logoPathMap[companyName] || "";
+        // 동적으로 기본 경로 처리
+        let logoPath = logoPathMap[companyName];
+        if (!logoPath) {
+            logoPath = `../assets/images/${companyName.toLowerCase()}_logo.png`; // 예상 경로 생성
+        }
+        console.log(`logoPath: ${logoPath}`);
 
+        // 추천 아이템 생성
         const insuranceItem = document.createElement("div");
         insuranceItem.className = "insurance-item";
         insuranceItem.style.border = "1px solid #ddd";
@@ -98,23 +103,46 @@ document.addEventListener("DOMContentLoaded", () => {
         insuranceItem.style.marginBottom = "20px";
         insuranceItem.style.padding = "15px";
         insuranceItem.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.1)";
-        insuranceItem.style.width = "80%"; // 가로폭 조정
+        insuranceItem.style.width = "80%";
         insuranceItem.style.margin = "20px auto";
+        insuranceItem.style.backgroundColor = "#ffffff"; // 흰색 배경 추가
 
-        insuranceItem.innerHTML = `
-            <div class="insurance-info">
-                <img src="${logoPath}" alt="${companyName}" style="max-width: 100px; margin-bottom: 10px;">
-                <h2 class="insurance-title" style="font-size: 18px; font-weight: 600;">${cleanedTitle}</h2>
-                <p class="insurance-evaluation" style="font-size: 14px; color: #555;">
-                    평가: <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; border: 2px solid black; background-color: ${evaluationColor}; margin-right: 5px;"></span> ${evaluationText}
-                </p>
-                <p class="insurance-description" style="font-size: 14px; color: #555;">${hashtags}</p>
-            </div>
+        // 이미지 추가
+        const logoImg = document.createElement("img");
+        logoImg.src = logoPath;
+        logoImg.alt = companyName;
+        logoImg.style.maxWidth = "100px";
+        logoImg.style.marginBottom = "10px";
+        insuranceItem.appendChild(logoImg);
+
+        // 텍스트 추가
+        const title = document.createElement("h2");
+        title.className = "insurance-title";
+        title.style.fontSize = "18px";
+        title.style.fontWeight = "600";
+        title.textContent = cleanedTitle;
+        insuranceItem.appendChild(title);
+
+        const evaluation = document.createElement("p");
+        evaluation.className = "insurance-evaluation";
+        evaluation.style.fontSize = "14px";
+        evaluation.style.color = "#555";
+        evaluation.innerHTML = `
+            평가: <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; border: 2px solid black; background-color: ${evaluationColor}; margin-right: 5px;"></span> ${evaluationText}
         `;
+        insuranceItem.appendChild(evaluation);
+
+        const description = document.createElement("p");
+        description.className = "insurance-description";
+        description.style.fontSize = "14px";
+        description.style.color = "#555";
+        description.textContent = hashtags;
+        insuranceItem.appendChild(description);
+
         recommendationContainer.appendChild(insuranceItem);
     });
 
-    // 버튼 추가
+    // 시뮬레이션 버튼 추가
     const simulateButton = document.createElement("button");
     simulateButton.type = "button";
     simulateButton.className = "simulate-button";
@@ -128,32 +156,9 @@ document.addEventListener("DOMContentLoaded", () => {
     simulateButton.style.margin = "20px auto";
     simulateButton.style.display = "block";
 
-    recommendationContainer.appendChild(simulateButton);
-
-    // 각 버튼에 이벤트 추가: 4.chatbot.html로 이동
-    simulateButton.addEventListener("mouseover", () => {
-        simulateButton.style.backgroundColor = "#004085";
-        simulateButton.style.transform = "scale(1.05)";
-        simulateButton.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.2)";
-    });
-
-    simulateButton.addEventListener("mouseout", () => {
-        simulateButton.style.backgroundColor = "#5a7d9a";
-        simulateButton.style.transform = "scale(1)";
-        simulateButton.style.boxShadow = "none";
-    });
-
-    simulateButton.addEventListener("mousedown", () => {
-        simulateButton.style.transform = "scale(0.95)";
-    });
-
-    simulateButton.addEventListener("mouseup", () => {
-        simulateButton.style.transform = "scale(1.05)";
-    });
-
-    simulateButton.addEventListener("click", (event) => {
-        event.preventDefault();
-        console.log("챗봇 페이지로 이동 버튼 클릭됨");
+    simulateButton.addEventListener("click", () => {
         window.location.href = "http://localhost:8501";
     });
+
+    recommendationContainer.appendChild(simulateButton);
 });
