@@ -224,7 +224,9 @@ class SuggestionAPIView(APIView):
             top_3_recommendations = recommend_top_k_products(user_query, pdf_dir, model, k=3)
 
             recommendation_results = []
-            recommendation_send = []
+
+            recommendation_category = []
+            recommendation_category.append(category)
 
             for idx, rec in enumerate(top_3_recommendations):
                 print(f"Top {idx+1}: {rec['상품명']}, 총점: {rec['총점']:.2f}")
@@ -249,10 +251,13 @@ class SuggestionAPIView(APIView):
             
             # 상위 디렉토리에 파일 저장
             file_path = os.path.join(parent_dir, 'recommendations.json')
-            
             # JSON 저장
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(recommendation_results, f, ensure_ascii=False, indent=4)
+
+            file_path = os.path.join(parent_dir, 'recommendations_category.json')
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(recommendation_category, f, ensure_ascii=False, indent=4)
             # JSON 응답 생성
             return Response({"status": "success", "recommendations": recommendation_results})
 

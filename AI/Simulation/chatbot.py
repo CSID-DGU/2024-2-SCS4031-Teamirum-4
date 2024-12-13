@@ -1,4 +1,3 @@
-from openai import OpenAI
 import streamlit as st
 import json
 import os
@@ -10,154 +9,281 @@ import streamlit.components.v1 as components
 import pdfplumber
 from PIL import Image
 import pytesseract
+import openai
+from konlpy.tag import Okt
+import unicodedata
 
 # OpenAI API 키 설정
-pytesseract.pytesseract.tesseract_cmd = r"C:/Program Files/Tesseract-OCR/tesseract.exe"
- 
-# 추천 결과를 JSON 파일에서 불러오기
-# 상대 경로로 JSON 파일 경로 설정
-pdf_dir = '/Users/jjrm_mee/Desktop/2024-2-SCS4031-Teamirum-4/recommendations.json'
+openai.api_key=('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')
 
-# 파일 존재 여부 확인
-if not os.path.exists(pdf_dir):
-    raise FileNotFoundError(f"File not found: {pdf_dir}")
-
-with open(pdf_dir, 'r', encoding='utf-8') as f:
+# 추천 결과 로드
+recommendationstest_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../recommendations.json'))
+with open(recommendationstest_path, 'r', encoding='utf-8') as f:
     recommendation_results = json.load(f)
 
-# 텍스트 전처리 함수
+# 카테고리 로드
+recommendation_category_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../recommendations_category.json'))
+with open(recommendation_category_path, 'r', encoding='utf-8') as f:
+    recommendation_category = json.load(f)
+
+# 진료비 데이터 로드
+with open(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../진료비_결과.json')), 'r', encoding='utf-8') as f:
+    fee_data = json.load(f)
+
+# 약관, 요약서 디렉토리 설정 (필요에 맞게 경로 수정)
+# terms_dir = "/Users/ddinga/Downloads/약관실손보험"
+# summary_dir = "/Users/ddinga/Downloads/요약서실손보험"
+
+pdf_summary_dirs = {
+    "실손보험": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품요약서/실손보험')),
+    "건강보험": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품요약서/건강보험(암 등)')),
+    "종신보험": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품요약서/종신보험')),
+    "정기보험": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품요약서/정기보험')),
+    "기타": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품요약서/기타')),
+}
+
+pdf_full_dirs = {
+    "실손보험": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품약관/실손보험')),
+    "건강보험": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품약관/건강보험(암 등)')),
+    "종신보험": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품약관/종신보험')),
+    "정기보험": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품약관/정기보험')),
+    "기타": os.path.abspath(os.path.join(os.path.dirname(__file__), '../../상품약관/기타')),
+}
+
+# print(recommendation_results[0])
+pdf_summary_dir = pdf_summary_dirs.get(recommendation_category[0])
+pdf_full_dir = pdf_full_dirs.get(recommendation_category[0])
+
+terms_dir = pdf_full_dir
+summary_dir = pdf_summary_dir
+
+def extract_text_from_pdf(pdf_path):
+    text = ""
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text + "\n"
+    return text
+
+def clean_text(text):
+    text = re.sub(r'\s+', ' ', text)  # 공백 제거
+    text = re.sub(r'[^\w\sㄱ-ㅎㅏ-ㅣ가-힣.,!?]', '', text)  # 특수문자 제거
+    return text.strip()
+
+def extract_relevant_text(pdf_text, keywords=None, max_sentences=10):
+    if keywords is None:
+        keywords = ["계산", "보험금", "공제", "환급", "보상금액", "공제금액", "보상비율", "자기부담금"]
+    sentences = re.split(r'(?<=[.!?])\s+', pdf_text)
+    relevant_sentences = [s for s in sentences if any(k in s for k in keywords)]
+    return " ".join(relevant_sentences[:max_sentences])
+
+def find_calculation_logic(product_name, summary_dir):
+    if not product_name.endswith(".pdf"):
+        terms_path = os.path.join(summary_dir, f"{product_name}.pdf")
+    else:
+        terms_path = os.path.join(summary_dir, product_name)
+    
+    if not os.path.exists(terms_path):
+        return f"약관 파일을 찾을 수 없습니다: {terms_path}"
+
+    pdf_text = extract_text_from_pdf(terms_path)
+    pdf_text = clean_text(pdf_text)
+    relevant_text = extract_relevant_text(pdf_text)
+
+    prompt = f"""
+    아래는 {product_name} 상품의 요약서 내용입니다.
+    이 보험상품은 실손의료비보험으로, 보장대상 의료비에 대하여 일정 금액 또는 일정 비율의 자기부담금을 공제한 뒤 보험금을 산출합니다.
+    약관 내용을 분석하여 보험금 계산 로직(자기부담금 계산, 공제금액, 보상비율, 산출 방식 등)을 명확히 제시해 주세요.
+
+    [반환 형식 안내]
+    - 가능하다면 수식 형태(예시): 보험금 = 보상대상 의료비 - max(공제금액, 보상대상 의료비 * 보상비율)
+    - 위 형식대로 명확히 표현하기 어렵다면, 자기부담금 차감 방식과 보상비율을 설명 문장 형태로라도 제시해주세요.
+    - 보상대상 의료비, 공단부담총액, 이미납부한금액 등의 변수를 사용할 경우 변수명을 그대로 사용해주세요.
+
+    요약서 내용:
+    {relevant_text}
+    """
+    try:
+        response = openai.ChatCompletion.create(
+            messages = [{"role": "user", "content": prompt}],
+            model = "gpt-3.5-turbo",
+        )
+        return response["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        return f"API 호출 실패: {e}"
+
+def extract_additional_data(product_name, relevant_text):
+    base_product_name = product_name.replace(".pdf", "").strip()
+    base_product_name = unicodedata.normalize('NFC', base_product_name)
+
+    data = {
+        "보상대상의료비": 0,
+        "보상비율": 0,
+        "자기부담금": 0
+    }
+
+    target_name_1 = unicodedata.normalize('NFC', "삼성생명-노후실손의료비보장보험(갱신형,무배당)")
+    target_name_2 = unicodedata.normalize('NFC', "삼성생명-간편실손의료비보장보험(기본형,갱신형,무배당)")
+    target_name_3 = unicodedata.normalize('NFC', "교보생명-실손의료비보험(갱신형)Ⅲ[계약전환용]")
+
+    if base_product_name == target_name_3:
+        data["보상대상의료비"] = 27130
+        data["보상비율"] = 0.2
+        data["자기부담금"] = 10000
+    elif base_product_name == target_name_2:
+        data["보상대상의료비"] = 27130
+        data["보상비율"] = 0.3
+        data["자기부담금"] = 20000
+    elif base_product_name == target_name_1:
+        data["보상대상의료비"] = 27130
+        data["보상비율"] = 0.8
+        data["자기부담금"] = 30000
+
+    return data
+
+def calculate_reimbursement(product_name, formula, fee_data, additional_data):
+    """
+    상품명에 따라 고정된 로직으로 계산
+    항상: 보험금 = 보상대상의료비 - max(자기부담금, 보상대상의료비*보상비율)
+    """
+    보상대상의료비 = additional_data["보상대상의료비"]
+    보상비율 = additional_data["보상비율"]
+    자기부담금 = additional_data["자기부담금"]
+
+    보험금 = 보상대상의료비 - max(자기부담금, 보상대상의료비 * 보상비율)
+    return 보험금
+
+# 기존 챗봇 코드 함수
 def clean_text(text):
     text = re.sub(r'\s+', ' ', text)  # 불필요한 공백 제거
     text = re.sub(r'[^\w\sㄱ-ㅎㅏ-ㅣ가-힣.,!?]', '', text)  # 특수문자 제거
     return text.strip()
 
-def create_prompt(user_input, recommendation_results):
-    rag_results = []
-    for rec in recommendation_results:
-        try:
-            rag_results.append(
-                f"Rank {rec.get('rank', 'N/A')}: {rec.get('summary_text', '내용 없음')} "
-                f"(상품명: {rec.get('product_name', '상품명 없음')}, "
-                f"유사도 점수: {rec.get('similarity_score', 0.0):.2f})"
-            )
-        except KeyError as e:
-            rag_results.append(f"데이터 누락: {e}")
-    
-    references_text = "\n".join(rag_results)
-
-    # 시스템 메시지 생성
-    system_message = (
-        f"사용자의 질문과 관련된 정보를 기반으로 응답하세요.\n"
-        f"다음은 관련 참고자료입니다:\n{references_text}"
-    )
-    return system_message
-
-# GPT 응답 생성 함수
 def ask_gpt(user_input, recommendation_results):
-    terms_dir = "/Users/jjrm_mee/Desktop/2024-2-SCS4031-Teamirum-4/상품요약서/실손보험" 
-    #terms_dir = os.path.join(os.path.dirname(__file__), "상품요약서1", "실손보험")
- 
-    print(terms_dir)
-    
-    # 시스템 메시지 생성
-    system_message = create_prompt(user_input, recommendation_results)
-    
-    
-    context = "추천된 보험상품 목록과 관련 내용입니다:\n"
-    
-    # RAG 결과를 명확히 구조화
-    rag_results = []
-    for idx, rec in enumerate(recommendation_results[:3]):
-        product_name = rec.get('product_name', '상품명 없음')
-        relevant_text = rec.get('relevant_text', '관련 텍스트 없음')
-        similarity_score = rec.get('similarity_score', 0.0)
-        rag_results.append({
-            "rank" : idx+1,
-            "product_name" : product_name,
-            "relevant_text": relevant_text,
-            "similarity_score": similarity_score,
-        })
-       
-         # 약관 파일 처리 및 RAG 결과 보강
-        for result in rag_results:
-            terms_filename = result["product_name"]  # 파일 이름과 약관 파일명이 일치시켜야함
+    # 영수증 또는 특정 상품명 "교보생명-실손의료비보험(갱신형)Ⅲ[계약전환용]"이 포함되면 
+    # 첫 번째 로직(보험금 계산)을 적용
+    if "영수증" in user_input:
+        return handle_receipt_logic(recommendation_results)
+    elif "실손의료비보험" in user_input:
+        return handle_specific_product_logic("교보생명-실손의료비보험(갱신형)Ⅲ[계약전환용]")
+    else:
+        # 그렇지 않으면 기존 로직 실행
+        # terms_dir = "/Users/ddinga/Downloads/약관실손보험"
+        # terms_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../요약서실손보험'))
+        context = "아래는 추천된 보험 상품 목록과 관련 내용입니다:\n"
+        for idx, rec in enumerate(recommendation_results):
+            product_name = rec.get('product_name', '상품명 없음')
+            terms_filename = product_name  
             terms_path = os.path.join(terms_dir, terms_filename)
             relevant_text = ""
+
+            if os.path.exists(terms_path):
+                full_text = ""
+                try:
+                    if terms_path.endswith('.pdf'):
+                        with pdfplumber.open(terms_path) as pdf:
+                            for page in pdf.pages:
+                                page_text = page.extract_text()
+                                if page_text:
+                                    full_text += page_text + " "
+                    elif terms_path.endswith('.txt'):
+                        with open(terms_path, 'r', encoding='utf-8') as f:
+                            full_text = f.read()
+                    else:
+                        full_text = ""
+                    
+                    full_text = clean_text(full_text)
+                    sentences = re.split(r'(?<=[.!?])\s+', full_text)
+                    sentences = sentences[:1000]
+                    
+                    vectorizer = TfidfVectorizer().fit(sentences + [user_input])
+                    sentence_embeddings = vectorizer.transform(sentences)
+                    user_embedding = vectorizer.transform([user_input])
+
+                    similarities = cosine_similarity(user_embedding, sentence_embeddings)
+                    most_similar_idx = similarities.argmax()
+                    window_size = 2  # 앞뒤 2문장씩 묶는 예시 (적절히 조정 가능)
+                    start_idx = max(0, most_similar_idx - window_size)
+                    end_idx = min(len(sentences), most_similar_idx + window_size + 1)
+                    relevant_sentences = sentences[start_idx:end_idx]
+                    relevant_text = " ".join(relevant_sentences)
+
+                except Exception as e:
+                    relevant_text = "해당 상품의 약관을 처리하는 중 오류가 발생했습니다."
+            else:
+                relevant_text = "해당 상품의 약관을 찾을 수 없습니다."
+            
+            rec['relevant_text'] = relevant_text
+            context += f"{idx+1}. {product_name}: {relevant_text}\n"
+            print("relevant_text")
+
+        system_message = """
+            당신은 보험 전문가입니다. 
+            아래 질문에 대해선 유사하게 답변해주세요
+            Q: "세번째 추천해준 상품의 보장한도는 어떻게 되는지 설명해줘"
+            A: "세번째 추천한 상품은 "삼성생명-간편실손의료비보장보험"입니다. 이 보험은 다음과 같은 보장한도를 제공합니다: -일반진료비: 최대 연간 2,000만원까지 보장\n -입원진료비: 최대 연간 2,000만원까지 보장\n -수술비: 최대 연간 10,000만원까지 보장\n -통원진료비: 최대 연간 500만원까지 보장\n 이러한 보장한도는 보험 가입자가 발생한 의료비에 대해 일정 금액 범위 내에서 지원을 받을 수 있음을 의미합니다."
+            Q: " 세번째 추천해준 상품의 보험지급기준에 대해 알려줘"
+            A: "세번째 추천한 상품은 \"삼성생명-간편실손의료비보장보험\"의 보험지급기준은 다음과 같습니다:\n 1. 가입자격: 만 20세 이상\n 2. 보장내용:\n -의료비 실손보험금: 입원의료비, 통원의료비, 수술비, 진단검사비, 약제비, 치료재료비 등을 보장\n -입원일당금: 입원일당금을 추가로 지급\n -특약보장: 특정질병에 대한 추가 혜택 제공\n 3. 지급조건: \n -진료비가 보험약관에 명시된 보장내용에 해당해야 함\n -진료비가 실제 발생한 것이어야 하며, 과거의 질병 또는 부상에 대한 치료비는 보장되지 않음\n -보험금 청구 시 필요한 서류를 제출하여야 함\n 4.지급기준:\n -진료비가 보험약관에 명시된 보장내용에 해당하고, 지급조건을 충족할 경우에 보험금이 지급됨\n -보험금 지급 심사는 보험회사의 규정에 따라 이루어지며, 필요한 서류 및 정보를 제출하여야 함"
+            Q: 첫번째 추천해준 상품의 보험금을 보장받지 못하는 경우는 뭐가 있어?"
+            A: "첫번째 추천한 상품은 \"삼성생명-노후실손의료비보장보험\"의 보험금을 보장받지 못하는 경우는 다음과 같습니다:\n 1. 피보험자가 고의로 지신을 해친 경우\n 2. 보험수익자가 고의로 피보험자를 해친 경우\n 3. 피보험자가 임신, 출산, 산후기로 입원 또는 통원한 경우\n 4. 전쟁, 외국의 무력행사, 내란, 사변, 폭동으로 인한 경우"
+            """
+            
+        messages = [
+            {"role": "system", "content": "당신은 보험 상품에 대한 전문가로서 사용자에게 정보를 제공합니다. 다음은 관련 정보입니다:\n" +system_message+ context},
+            {"role": "user", "content": user_input}
+        ]
         
-        if os.path.exists(terms_path):
-            full_text = ""
-            print("있나용")
-            try:
-                # 약관 파일 로드
-                if terms_path.endswith('.pdf'):
-                    with pdfplumber.open(terms_path) as pdf:
-                        for page in pdf.pages:
-                            page_text = page.extract_text()
-                            if page_text:
-                                full_text += page_text + " "
-                elif terms_path.endswith('.txt'):
-                    with open(terms_path, 'r', encoding='utf-8') as f:
-                        full_text = f.read()
-                else:
-                    print(f"지원하지 않는 파일 형식입니다: {terms_filename}")
-                    full_text = ""
-                
-                # 텍스트 전처리
-                full_text = clean_text(full_text)
-                sentences = re.split(r'(?<=[.!?])\s+', full_text)[:1000]# 문장 수 제한
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                max_tokens=500,
+                temperature=0.35,
+                n=1,
+                stop=None,
+            )
+            answer = response['choices'][0]['message']['content'].strip()
+            return answer
+        except Exception as e:
+            return None
 
-                # 사용자 질문과 가장 유사한 문장 찾기
-                vectorizer = TfidfVectorizer().fit(sentences)
-                sentence_embeddings = vectorizer.transform(sentences)
-                user_embedding = vectorizer.transform([user_input])
-                
-                similarities = cosine_similarity(user_embedding, sentence_embeddings)
-                most_similar_idx = similarities.argsort()[0][-1]
-                most_similar_sentence = sentences[most_similar_idx]
-                
-                relevant_text = most_similar_sentence
-            except Exception as e:
-                print(f"{terms_filename} 처리 중 오류 발생: {e}")
-                relevant_text = "해당 상품의 약관을 처리하는 중 오류가 발생했습니다."
-        else:
-            relevant_text = "해당 상품의 약관을 찾을 수 없습니다."
+def handle_receipt_logic(recommendation_results):
+    # "영수증" 키워드 있을 때 모든 추천상품에 대해 계산 로직 적용
+    result_text = ""
+    fixed_calculation_logic = "보험금 = 보상대상의료비 - max(자기부담금, 보상대상의료비*보상비율)"
+    for rec in recommendation_results:
+        product_name = rec.get("product_name", None)
+        if not product_name:
+            continue
         
-        result['relevant_text'] = relevant_text
+        calculation_logic = find_calculation_logic(product_name, terms_dir)
+        additional_data = extract_additional_data(product_name, calculation_logic)
+        reimbursement = calculate_reimbursement(product_name, fixed_calculation_logic, fee_data, additional_data)
 
-    # 메시지 구성 (ChatCompletion API 형식)
-    messages = [
-        {"role": "system", "content": "당신은 보험 상품에 대한 전문가로서 사용자에게 정보를 제공합니다."},
-        {"role": "user", "content": user_input},
-        {"role": "assistant", "content": context},
-        {"role": "user", "content": "위의 정보를 바탕으로 사용자의 질문에 가장 관련 있는 답변을 제공하세요."}
-    ]
+        result_text += f"**상품명: {product_name}**\n"
+        result_text += f"추출된 계산 로직(원문): {calculation_logic}\n"
+        result_text += f"실제 적용되는 고정 계산 로직: {fixed_calculation_logic}\n"
+        result_text += f"적용된 데이터: {additional_data}\n"
+        result_text += f"계산된 보험금: {reimbursement}원\n\n"
+    return result_text
 
-    # GPT 호출
-    try:
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            max_tokens=1000,
-            temperature=0.7,
-            n=1,
-            stop=None,
-        )
-        answer = response.choices[0].message.content.strip()
-        return answer
-    except Exception as e:
-        return f"Error: {str(e)}"
-    
+def handle_specific_product_logic(product_name):
+    # 특정 상품명에 대해 고정된 로직 실행
+    calculation_logic = find_calculation_logic(product_name, terms_dir)
+    fixed_calculation_logic = "보험금 = 보상대상의료비 - max(자기부담금, 보상대상의료비*보상비율)"
+    additional_data = extract_additional_data(product_name, calculation_logic)
+    reimbursement = calculate_reimbursement(product_name, fixed_calculation_logic, fee_data, additional_data)
 
-# OCR 처리 함수
-def ocr_image_to_text(image):
-    try:
-        text = pytesseract.image_to_string(image, lang='kor')
-        return clean_text(text)
-    except Exception as e:
-        return f"Error during OCR processing: {str(e)}"
+    result_text = f"**상품명: {product_name}**\n"
+    result_text += f"추출된 계산 로직(원문): {calculation_logic}\n"
+    result_text += f"실제 적용되는 고정 계산 로직: {fixed_calculation_logic}\n"
+    result_text += f"적용된 데이터: {additional_data}\n"
+    result_text += f"계산된 보험금: {reimbursement}원\n\n"
+    return result_text
 
-#🟢표시 :챗봇 UI
-# 🟢🟢🟢🟢해시태그 추출함수
+
+# 해시태그 추출 함수
 def extract_hashtags(raw_content):
     okt = Okt()
     nouns = okt.nouns(raw_content)
@@ -165,17 +291,12 @@ def extract_hashtags(raw_content):
     hashtags = " ".join([f"#{noun}" for noun in unique_nouns])
     return hashtags
 
-#🟢🟢 페이지 레이아웃 설정
-
 st.set_page_config(page_title="티미룸 보험 챗봇", layout="wide")
 
-# CSS 파일 로드 함수
 def load_css(file_name):
-    with open(file_name, "r", encoding="utf-8") as f:  # 인코딩 설정
+    with open(file_name, "r", encoding="utf-8") as f:
         return f"<style>{f.read()}</style>"
 
-
-# CSS 파일 로드 및 적용
 st.markdown(load_css("styles.css"), unsafe_allow_html=True)
 
 #유사도 내림차순
@@ -185,29 +306,36 @@ recommendation_results_sorted = sorted(
     reverse=True
 )
 
-# 왼쪽 사이드바: 추천 보험 TOP3
 st.sidebar.markdown(
     """
     <div class="sidebar-container">
         <h2>추천 보험 TOP 3</h2>
     </div>
+    </br>
     """,
     unsafe_allow_html=True,
 )
 
-# 추천 결과 출력
 for idx,rec in enumerate(recommendation_results):
+    # 상품명과 유사도 점수 가져오기
     product_name = rec.get("product_name", "상품명 없음").replace(".pdf", "")
     similarity_score = rec.get("similarity_score", 0.0)
-    reason = rec.get("reason", "")
 
-    # 괄호 안의 내용 추출 및 중복 제거
-    if "(" in reason and ")" in reason:
-        raw_content = reason[reason.find("(") + 1:reason.find(")")]  # 괄호 안 추출
-        hashtags =  extract_hashtags(raw_content)
+    # 추천 이유와 키워드 가져오기
+    reason = rec.get("reason", "")
+    keywords = rec.get("keywords", ["#추천이유 없음"])  # 키워드가 없을 경우 기본값 설정
+
+    if keywords:
+        hashtags = " ".join(keywords)  # 키워드를 문자열로 결합
     else:
         hashtags = "#추천이유 없음"
-    print("hashtags: ", hashtags)
+
+    # 결과 출력
+    print(f"상품명: {product_name}")
+    #print(f"유사도 점수: {similarity_score:.2f}")
+    #print(f"추천 이유: {reason}")
+    print(f"키워드: {hashtags}")
+    print("-" * 30)
 
     # 범주화 및 신호등 색상 아이콘 설정
     if idx == 0:
@@ -236,7 +364,6 @@ for idx,rec in enumerate(recommendation_results):
     # 구분선 추가
     st.sidebar.markdown("<hr>", unsafe_allow_html=True)
 
-# 사이드바
 st.sidebar.markdown(
     """
     <div class="fixed-header header-two">
@@ -244,7 +371,7 @@ st.sidebar.markdown(
         <ul>
             <li>Q. 보험 가입 시 가장 중요한 점은?</li>
             <li>Q. 제 기준에서 해당 보험 가입시 보장 금액은 얼마나 나오나요?</li>
-            <li>Q. 보험 약관을 확인하려면 어떻게 해야 하나요?</li>
+            <li>Q. 보험금을 보장받지 못하는 경우는 뭐가 있나요?</li>
             <li>Q. 추천받은 보험의 청구 절차가 어떻게 되나요?</li>
             <li>Q. 추천받은 보험의 보험금 지급기준이 어떻게 되나요?</li>
             <li>Q. 추천받은 보험의 해약환급금을 알려주세요</li>
@@ -254,8 +381,6 @@ st.sidebar.markdown(
     unsafe_allow_html=True,
 )
 
-# 🟢🟢🟢🟢**메인 영역**: 챗봇 UI
-# 헤더
 st.markdown(
     """
     <div class="header">
@@ -265,10 +390,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 공백 추가
 st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
-
-# 흰색 컨테이너 생성
 st.markdown(
     """
     <div style="background-color: #ffffff; padding: 50px; border-radius: 10px; margin: 100px 0;">
@@ -277,21 +399,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 공백 추가
-st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
-
- #🟢🟢🟢🟢 UI
-
-# 세션 상태 초기화
-# 대화 이력 관리
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "system", "content": "당신은 보험 전문가입니다. 사용자에게 정보를 제공합니다."}
     ]
-# 파일 업로드 UI
+
 uploaded_file = st.file_uploader("이미지 파일을 업로드하세요 (PNG, JPG)", type=["png", "jpg", "jpeg"])
 
-#공백 추가
 st.markdown(
     """
     <div style="background-color: #ffffff; padding: 5px; border-radius: 10px; margin: 5px 0;">
@@ -300,25 +414,20 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# 공백 추가
 st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
 
+for message in st.session_state.messages:
+    role = message["role"]
+    content = message["content"]
+    if role == "user":
+        with st.chat_message("user"):
+            st.markdown(content)
+    elif role == "assistant":
+        with st.chat_message("assistant"):
+            st.markdown(content)
 
 user_input = st.text_input("질문을 입력하세요:")
 
-# OCR 처리
-ocr_text = ""
-if uploaded_file:
-    image = Image.open(uploaded_file)
-    with st.spinner("이미지에서 텍스트를 추출 중..."):
-        ocr_text = ocr_image_to_text(image)
-    st.success("이미지에서 텍스트 추출이 완료되었습니다.")  
-
- # OCR 데이터 + 사용자 입력 결합
-#combined_input = f"{user_input.strip()} {ocr_text.strip()}".strip()
-
-    
-# 세션 상태 업데이트
 if user_input:
     assistant_response = ask_gpt(user_input, recommendation_results)
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -330,8 +439,10 @@ if user_input:
         st.markdown(assistant_response)
 else:
     st.write("질문을 입력하거나 이미지 파일을 업로드하세요.")
-#🟢🟢🟢🟢 UI
-# 흰색 컨테이너 생성
+
+#st.write("Debug: user_input =", user_input)
+#st.write("Debug: messages =", st.session_state.messages)
+
 st.markdown(
     """
     <div style="background-color: #ffffff; padding: 20px; border-radius: 10px; margin: 20px 0;">
@@ -341,15 +452,12 @@ st.markdown(
 )
 st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
 
-
-
-# 하단 고정 콘텐츠
 st.markdown(
     """
     <div class="fixed-footer">
         <p>
             © 2024 티미룸 보험 챗봇 | 문의 사항은 
-            <a href="mailto:contact@timeroom.com" style="text-decoration:none; color:#007bff;">
+            <a href="mailto:contact@teamiroom.com" style="text-decoration:none; color:#007bff;">
                 contact@timeroom.com
             </a>으로 연락하세요.
         </p>
@@ -358,52 +466,38 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-
-##############################################
-# 13등분된 열 생성
 col1, col2, col3, col4, col5, col6, col7, col8,col9,col10,col11,col12,col13,col14,col15,col16,col17 = st.columns(17)
 
-image_1_path = "C:/Users/kehah/Desktop/2024-2-SCS4031-Teamirum-4/AI/Simulation/img/receipt.png"
-image_2_path = "C:/Users/kehah/Desktop/2024-2-SCS4031-Teamirum-4/AI/Simulation/img/customer-support.png"
-image_3_path = "C:/Users/kehah/Desktop/2024-2-SCS4031-Teamirum-4/AI/Simulation/img/insurance-company.png"
-image_4_path = "C:/Users/kehah/Desktop/2024-2-SCS4031-Teamirum-4/AI/Simulation/img/qna.png"
-image_5_path = "C:/Users/kehah/Desktop/2024-2-SCS4031-Teamirum-4/AI/Simulation/img/heart.png"
+image_1_path = os.path.abspath(os.path.join(os.path.dirname(__file__), './img/receipt.png'))
+image_2_path = os.path.abspath(os.path.join(os.path.dirname(__file__), './img/customer-support.png'))
+image_3_path = os.path.abspath(os.path.join(os.path.dirname(__file__), './img/insurance-company.png'))
+image_4_path = os.path.abspath(os.path.join(os.path.dirname(__file__), './img/qna.png'))
+image_5_path = os.path.abspath(os.path.join(os.path.dirname(__file__), './img/heart.png'))
 link5 = "https://pub.insure.or.kr/#fsection01"
-# image_3_path = "images/image3.jpg"
 
+os.path.abspath(os.path.join(os.path.dirname(__file__), './img/heart.png'))
 
-
-# 첫 번째 열 콘텐츠
 with col3:
-   st.image(image_1_path, caption="보험금 계산")
+    st.image(image_1_path, caption="보험금 계산")
 
-# 두 번째 열 콘텐츠
 with col6:
     st.image(image_2_path, caption="고객센터 전화번호")
-   
-# 세 번째 열 콘텐츠
+
 with col9:
     st.image(image_3_path, caption="보험사 홈페이지")
-# 4 번째 열 콘텐츠
+
 with col12:
     st.image(image_4_path, caption="자주 묻는 질문")
-# 5 번째 열 콘텐츠
+
 with col15:
     st.image(image_5_path, caption="생명보험 공시실 비교")
 
-
-
-##############################################
-# 아래쪽 17등분된 열 생성
 col1, col2, col3, col4, col5, col6, col7, col8, col9, col10, col11 = st.columns(11)
 
-# 첫 번째 콘텐츠 (2칸 차지)
 with col2:
     with st.expander("보험금 정보 보기"):
         st.write("보험금 계산에 대한 상세 정보를 여기서 확인할 수 있습니다.")
-        st.write("예: 보험료 계산 예시나 도구를 여기에 추가.")
 
-# 두 번째 콘텐츠 (2칸 차지)
 with col4:
     with st.expander("고객센터"):
         st.write("4대 생명보험 고객센터 전화번호:")
@@ -412,7 +506,6 @@ with col4:
         st.write("교보생명: 1588-1001")
         st.write("신한라이프: 1588-8000")
 
-# 세 번째 콘텐츠 (2칸 차지)
 with col6:
     with st.expander("4대 생명보험사 홈페이지 링크"):
         st.write("[삼성생명](https://www.samsunglife.com)")
@@ -420,17 +513,14 @@ with col6:
         st.write("[교보생명](https://www.kyobo.co.kr)")
         st.write("[신한라이프](https://www.shinhanlife.co.kr)")
 
-# 네 번째 콘텐츠 (2칸 차지)
 with col8:
     st.markdown(
         f'<a href="{link5}" target="_blank" style="text-decoration:none; font-size:16px;">👉 생명보험 공시실 바로가기</a>',
         unsafe_allow_html=True,
     )
 
-# 다섯 번째 콘텐츠 (2칸 차지)
 with col10:
     st.markdown(
         f'<a href="{link5}" target="_blank" style="text-decoration:none; font-size:16px;">👉 생명보험 공시실 바로가기</a>',
         unsafe_allow_html=True,
     )
-# 🟢🟢🟢🟢 UI끝

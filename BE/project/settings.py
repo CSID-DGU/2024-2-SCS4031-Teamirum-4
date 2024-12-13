@@ -43,8 +43,6 @@ INSTALLED_APPS = [
     
     # app
     'suggestion',
-    'simulation',
-
 
 ]
 
