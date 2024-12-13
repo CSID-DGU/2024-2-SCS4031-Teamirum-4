@@ -156,6 +156,25 @@ document.addEventListener("DOMContentLoaded", () => {
     simulateButton.style.margin = "20px auto";
     simulateButton.style.display = "block";
 
+    // 버튼 호버 및 클릭 효과 추가
+    simulateButton.addEventListener("mouseover", () => {
+        simulateButton.style.backgroundColor = "#405767"; // 호버 색상
+        simulateButton.style.transform = "scale(1.05)"; // 크기 확대
+        simulateButton.style.boxShadow = "0px 4px 6px rgba(0, 0, 0, 0.2)"; // 그림자
+    });
+    simulateButton.addEventListener("mouseout", () => {
+        simulateButton.style.backgroundColor = "#5a7d9a"; // 기본 색상 복구
+        simulateButton.style.transform = "scale(1)";
+        simulateButton.style.boxShadow = "none";
+    });
+    simulateButton.addEventListener("mousedown", () => {
+        simulateButton.style.transform = "scale(0.95)"; // 크기 축소
+    });
+    simulateButton.addEventListener("mouseup", () => {
+        simulateButton.style.transform = "scale(1.05)"; // 크기 복구
+    });
+
+    // 버튼 클릭 이벤트
     simulateButton.addEventListener("click", () => {
         window.location.href = "http://localhost:8501";
     });

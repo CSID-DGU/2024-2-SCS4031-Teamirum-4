@@ -112,6 +112,12 @@ document.addEventListener("DOMContentLoaded", () => {
         popup.style.zIndex = "1000";
         document.body.appendChild(popup);
 
+        // 기존 데이터 초기화
+        localStorage.removeItem("userInfo"); // 기존 데이터를 지웁니다.
+
+        // 새로운 데이터 저장
+        localStorage.setItem("userInfo", JSON.stringify(jsonData));
+        console.log("userInfo 저장됨:", jsonData);
 
         // Replace this section inside the fetch response handling
         try {
@@ -130,9 +136,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // 로컬 저장소에 데이터 저장
-            localStorage.setItem("userName", jsonData.기본정보.이름);
-            localStorage.setItem("recommendationData", JSON.stringify(responseBody));
-            console.log("추천 데이터 저장 성공");
+            //localStorage.setItem("userName", jsonData.기본정보.이름);
+            //localStorage.setItem("recommendationData", JSON.stringify(responseBody));
+            //console.log("추천 데이터 저장 성공");
 
             // 팝업창 제거
             if (popup) {
