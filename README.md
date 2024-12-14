@@ -30,6 +30,13 @@
 - IDE 터미널 streamlit과 백엔드 각각 총 2개를 열어야함
 - 프론트엔드는 파일을 직접 실행시켜야 함
 
+### 3-0. 가상환경 생성 (최초 1회만, 사용하는 가상환경이 있는 경우 생략 가능)
+    windows : python -m venv {가상 환경 이름}
+    mac : python3 -m venv {가상 환경 이름}
+
+    windows : source venv/Scripts/activate
+    mac : source venv/bin/activate
+
 ### 3-1. 라이브러리 설치
     pip install -r requirements.txt
 
