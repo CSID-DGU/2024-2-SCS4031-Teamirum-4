@@ -14,7 +14,7 @@ from konlpy.tag import Okt
 import unicodedata
 
 # OpenAI API 키 설정
-openai.api_key=('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')
+openai.api_key=('')
 
 # 추천 결과 로드
 recommendationstest_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../recommendations.json'))
